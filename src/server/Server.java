@@ -1,37 +1,42 @@
 package server;
 
+import server.core.FileReceiverServer;
+import server.handler.ClientHandler;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 public class Server {
+
     private static final int PORT = 12345;
-    private static final Queue<Socket> waitingQueue = new LinkedList<>();
+    private static final int MAX_CLIENTS = 100;
+    private static final Logger logger = Logger.getLogger(Server.class.getName());
 
     public static void main(String[] args) {
-        System.out.println("Random Chat Server started on port " + PORT);
+        new Thread(new FileReceiverServer()).start();
+        ExecutorService threadPool = Executors.newFixedThreadPool(MAX_CLIENTS);
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            while (true) {
-                Socket socket = serverSocket.accept();
-                System.out.println("New client connected.");
+            logger.info("Server started on port " + PORT);
 
-                synchronized (waitingQueue) {
-                    if (waitingQueue.isEmpty()) {
-                        waitingQueue.add(socket);
-                        System.out.println("Waiting for a match...");
-                    } else {
-                        Socket partnerSocket = waitingQueue.poll();
-                        System.out.println("Match found! Starting 1:1 chat.");
-                        new Thread(new ClientHandler(socket, partnerSocket)).start();
-                        new Thread(new ClientHandler(partnerSocket, socket)).start();
-                    }
-                }
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                logger.info("New client connected: " + clientSocket.getRemoteSocketAddress());
+
+                ClientHandler handler = new ClientHandler(clientSocket);
+                threadPool.execute(handler);
             }
+
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Server encountered an error", e);
+        } finally {
+            threadPool.shutdown();
         }
     }
 }

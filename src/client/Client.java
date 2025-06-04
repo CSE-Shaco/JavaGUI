@@ -1,40 +1,72 @@
 package client;
 
+import client.core.FileListenerThread;
+import client.core.FileSender;
+
 import java.io.*;
 import java.net.Socket;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+/**
+ * Console-based client for sending messages and files to the server.
+ */
 public class Client {
+
+    private static final String SERVER_HOST = "localhost";
+    private static final int SERVER_PORT = 12345;
+    private static final Logger logger = Logger.getLogger(Client.class.getName());
+
     public static void main(String[] args) {
-        final String SERVER_HOST = "localhost";
-        final int SERVER_PORT = 12345;
+        // Start file receiving thread (dynamic port)
+        FileListenerThread fileListener = new FileListenerThread(0); // 0 means OS will assign port
+        fileListener.start();
+
+        int fileReceivePort = fileListener.getPort(); // get assigned port
 
         try (Socket socket = new Socket(SERVER_HOST, SERVER_PORT);
-             BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
-             BufferedReader serverReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             BufferedWriter serverWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+             Scanner scanner = new Scanner(System.in)) {
 
-            System.out.println("Connected to random chat server.");
+            logger.info("Connected to server at " + SERVER_HOST + ":" + SERVER_PORT);
 
-            new Thread(() -> {
-                String response;
+            // 서버에 파일 수신 포트 번호 전달
+            out.write("FILE_PORT:" + fileReceivePort);
+            out.newLine();
+            out.flush();
+
+            // Receiving thread
+            Thread receiveThread = new Thread(() -> {
                 try {
-                    while ((response = serverReader.readLine()) != null) {
-                        System.out.println("Stranger: " + response);
+                    String response;
+                    while ((response = in.readLine()) != null) {
+                        System.out.println(response);
                     }
                 } catch (IOException e) {
-                    System.out.println("Disconnected.");
+                    logger.log(Level.WARNING, "Disconnected from server", e);
                 }
-            }).start();
+            });
+            receiveThread.start();
 
-            String input;
-            while ((input = consoleReader.readLine()) != null) {
-                serverWriter.write(input);
-                serverWriter.newLine();
-                serverWriter.flush();
+            // Sending input
+            while (true) {
+                String input = scanner.nextLine();
+
+                if (input.startsWith("!sendfile ")) {
+                    String filePath = input.substring("!sendfile ".length()).trim();
+                    FileSender.sendFile(filePath);
+                    continue;
+                }
+
+                out.write(input);
+                out.newLine();
+                out.flush();
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Connection error", e);
         }
     }
 }
