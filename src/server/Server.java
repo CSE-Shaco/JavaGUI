@@ -1,42 +1,54 @@
 package server;
 
-import server.core.FileReceiverServer;
 import server.handler.ClientHandler;
+import server.handler.FileHandler;
+import server.service.ChatService;
+import shared.util.LoggerUtil;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 
 public class Server {
 
-    private static final int PORT = 12345;
-    private static final int MAX_CLIENTS = 100;
-    private static final Logger logger = Logger.getLogger(Server.class.getName());
+    private static final int MSG_PORT = 12345;
+    private static final int FILE_PORT = 12346;
 
     public static void main(String[] args) {
-        new Thread(new FileReceiverServer()).start();
-        ExecutorService threadPool = Executors.newFixedThreadPool(MAX_CLIENTS);
+        LoggerUtil.log("Starting server...");
+        ChatService chatService = new ChatService();
 
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            logger.info("Server started on port " + PORT);
-
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                logger.info("New client connected: " + clientSocket.getRemoteSocketAddress());
-
-                ClientHandler handler = new ClientHandler(clientSocket);
-                threadPool.execute(handler);
+        // 메시지 수신용 서버소켓
+        Thread msgThread = new Thread(() -> {
+            try (ServerSocket msgServerSocket = new ServerSocket(MSG_PORT)) {
+                LoggerUtil.log("Message Server listening on port " + MSG_PORT);
+                while (true) {
+                    Socket msgSocket = msgServerSocket.accept();
+                    LoggerUtil.log("New message client connected: " + msgSocket.getRemoteSocketAddress());
+                    new ClientHandler(msgSocket, chatService).start();
+                }
+            } catch (IOException e) {
+                LoggerUtil.error("Message server error", e);
             }
+        });
 
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Server encountered an error", e);
-        } finally {
-            threadPool.shutdown();
-        }
+        // 파일 수신용 서버소켓
+        Thread fileThread = new Thread(() -> {
+            try (ServerSocket fileServerSocket = new ServerSocket(FILE_PORT)) {
+                LoggerUtil.log("File Server listening on port " + FILE_PORT);
+                while (true) {
+                    Socket fileSocket = fileServerSocket.accept();
+                    LoggerUtil.log("New file client connected: " + fileSocket.getRemoteSocketAddress());
+                    new FileHandler(fileSocket).start();
+                }
+            } catch (IOException e) {
+                LoggerUtil.error("File server error", e);
+            }
+        });
+
+        msgThread.start();
+        fileThread.start();
+
+        LoggerUtil.log("Server started successfully.");
     }
 }

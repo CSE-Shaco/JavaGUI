@@ -1,231 +1,122 @@
 package server.handler;
 
-import server.core.ChatRoom;
-import server.core.ChatRoomManager;
-import server.core.FileReceiver;
-import server.core.MatchMaker;
-import server.util.ChatLogger;
-import server.util.LogFileUtil;
+import server.domain.ChatRoom;
+import server.service.ChatService;
+import server.session.ClientSession;
+import shared.domain.User;
+import shared.dto.ClientRequest;
+import shared.dto.RoomListRequest;
+import shared.dto.RoomListResponse;
+import shared.dto.ServerResponse;
+import shared.util.LoggerUtil;
 
-import java.io.*;
-import java.net.ServerSocket;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Map;
 
-public class ClientHandler implements Runnable {
+public class ClientHandler extends Thread {
 
-    private static final Logger logger = Logger.getLogger(ClientHandler.class.getName());
+    private final Socket socket;
+    private final ChatService chatService;
+    private ClientSession session;
 
-    private static final ChatRoomManager roomManager = new ChatRoomManager();
-    private static final MatchMaker matchMaker = new MatchMaker(roomManager);
-    private static final Map<String, ClientHandler> userHandlers = new ConcurrentHashMap<>();
-    private static final Map<String, Integer> anonCount = new ConcurrentHashMap<>();
-    private static final int FILE_PORT = 23456;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
 
-    private final Socket textSocket;
-    private BufferedReader in;
-    private BufferedWriter out;
+    public ClientHandler(Socket socket, ChatService chatService) {
+        this.socket = socket;
+        this.chatService = chatService;
+    }
 
-    private String username;
-    private boolean isAnonymous = false;
-    private String anonymousName = null;
-    private ChatRoom chatRoom = null;
-    private ClientHandler partnerHandler = null;
-
-    public ClientHandler(Socket textSocket) {
-        this.textSocket = textSocket;
-        try {
-            in = new BufferedReader(new InputStreamReader(textSocket.getInputStream()));
-            out = new BufferedWriter(new OutputStreamWriter(textSocket.getOutputStream()));
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error initializing I/O", e);
-        }
+    public void setSession(ClientSession session) {
+        this.session = session;
     }
 
     @Override
     public void run() {
         try {
-            sendMessage("Enter 'random' for anonymous chat or your username:");
-            String input;
-            do {
-                input = in.readLine();
-            } while (input != null && input.startsWith("FILE_PORT:"));
+            out = new ObjectOutputStream(socket.getOutputStream());
+            in = new ObjectInputStream(socket.getInputStream());
 
-            if ("random".equalsIgnoreCase(input.trim())) {
-                isAnonymous = true;
-                anonymousName = generateAnonymousName("User");
-                sendMessage("Waiting for a random partner...");
+            while (true) {
+                Object obj = in.readObject();
 
-                ChatRoom tempRoom = matchMaker.requestMatch(anonymousName);
-                if (tempRoom == null) return;
+                if (obj instanceof RoomListRequest) {
+                    Map<String, Integer> roomMap = chatService.getRoomList();
+                    out.writeObject(new RoomListResponse(roomMap));
+                    out.flush();
+                }
 
-                for (String user : tempRoom.getParticipants()) {
-                    if (!user.equals(anonymousName)) {
-                        partnerHandler = userHandlers.get(user);
+                if (obj instanceof ClientRequest request) {
+                    User user = request.getUser();
+                    String roomId = request.getRoomId();
+
+                    if (session == null) {
+                        ChatRoom room = chatService.getOrCreateRoom(roomId);
+                        session = new ClientSession(this, null); // FileHandler는 나중에 set
+                        session.setUser(user);
+                        room.addSession(session);
+                        LoggerUtil.log(user.getDisplayName() + " joined room " + roomId);
                     }
-                }
 
-                if (partnerHandler != null) {
-                    partnerHandler.partnerHandler = this;
-                    partnerHandler.isAnonymous = true;
-                    partnerHandler.anonymousName = generateAnonymousName("User");
-
-                    partnerHandler.sendMessage("You are now connected to a random partner.");
-                    sendMessage("You are now connected to a random partner.");
-                }
-
-            } else {
-                username = input.trim();
-                userHandlers.put(username, this);
-
-                sendMessage("Enter comma-separated usernames to join (including yourself):");
-                String line = in.readLine();
-                Set<String> participants = parseParticipants(line);
-                participants.add(username);
-
-                if (roomManager.hasRoom(participants)) {
-                    chatRoom = roomManager.getRoom(participants);
-                } else {
-                    chatRoom = roomManager.createRoom(participants);
-                }
-
-                chatRoom.addParticipant(username);
-                sendMessage("Joined chat room with: " + String.join(", ", chatRoom.getParticipants()));
-            }
-
-            String message;
-            while ((message = in.readLine()) != null) {
-                String senderName = isAnonymous ? anonymousName : username;
-                String formatted = senderName + ": " + message;
-
-                if (isAnonymous && partnerHandler != null) {
-                    logAndSendToPartner("anonymous:" + getAnonymousRoomId(), formatted);
-                } else if (chatRoom != null) {
-                    logAndBroadcast(chatRoom.getRoomId(), formatted);
+                    handleRequest(request);
                 }
             }
-
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Connection lost", e);
+        } catch (Exception e) {
+            LoggerUtil.error("Client disconnected", e);
         } finally {
-            cleanup();
+            if (session != null) {
+                chatService.removeSession(session);
+            }
+            try {
+                socket.close();
+            } catch (Exception ignore) {}
         }
     }
 
+    private void handleRequest(ClientRequest request) {
+        String action = request.getAction();
+        ChatRoom room = chatService.getRoomById(request.getRoomId());
 
-    private void handleFileTransfer() {
-        try (ServerSocket fileServerSocket = new ServerSocket(FILE_PORT)) {
-            while (!fileServerSocket.isClosed()) {
-                Socket fileSocket = fileServerSocket.accept();
-                try (DataInputStream dis = new DataInputStream(fileSocket.getInputStream())) {
-                    FileReceiver.receiveFile(dis, receivedFile -> {
-                        String fileName = receivedFile.getName();
-                        String notice = "[System] " + (isAnonymous ? anonymousName : username) + " uploaded a file: " + fileName;
+        if (room == null || session == null) return;
 
-                        if (isAnonymous && partnerHandler != null) {
-                            partnerHandler.sendMessage(notice);
-                        } else if (chatRoom != null) {
-                            chatRoom.addMessage(notice);
-                            broadcast(notice);
-                        }
-                    });
+        User user = session.getUser();
 
-
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "File transfer failed", e);
+        switch (action) {
+            case "sendMessage" -> {
+                String content = request.getContent();
+                LoggerUtil.log("[" + room.getRoomId() + "] " + user.getDisplayName() + ": " + content);
+                ServerResponse response = new ServerResponse(user.getDisplayName(), content, room.getRoomId(), false);
+                room.broadcastMessage(response);
+            }
+            case "listRooms" -> {
+                try {
+                    Map<String, Integer> rooms = chatService.getRoomList();
+                    sendMessage(new RoomListResponse(rooms));
+                } catch (Exception e) {
+                    LoggerUtil.error("Failed to list rooms", e);
                 }
             }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "File server error", e);
-        }
-    }
-
-    private void logAndBroadcast(String roomId, String message) {
-        String hashedId = LogFileUtil.hashRoomId(roomId);
-        ChatLogger.log(hashedId, message);
-        broadcast(message);
-    }
-
-    private void logAndSendToPartner(String roomId, String message) {
-        String hashedId = LogFileUtil.hashRoomId(roomId);
-        ChatLogger.log(hashedId, message);
-        if (partnerHandler != null) {
-            partnerHandler.sendMessage(message);
-        }
-    }
-
-    private String getAnonymousRoomId() {
-        // 기준: 두 유저 이름 정렬해서 고정 순서로 만들기
-        List<String> names = new ArrayList<>();
-        names.add(anonymousName);
-        if (partnerHandler != null) {
-            names.add(partnerHandler.anonymousName);
-        }
-        Collections.sort(names);
-        return String.join("_", names);
-    }
-
-    private void broadcast(String message) {
-        for (String participant : chatRoom.getParticipants()) {
-            if (!participant.equals(username)) {
-                ClientHandler handler = userHandlers.get(participant);
-                if (handler != null) {
-                    handler.sendMessage(message);
-                }
+            case "join" -> {
+                String msg = user.getDisplayName() + "님이 입장하셨습니다.";
+                ServerResponse response = new ServerResponse("server", msg, room.getRoomId(), true);
+                room.broadcastMessage(response);
+            }
+            case "quit" -> {
+                String msg = user.getDisplayName() + "님이 퇴장하셨습니다.";
+                ServerResponse response = new ServerResponse("server", msg, room.getRoomId(), true);
+                room.broadcastMessage(response);
             }
         }
     }
 
-    public void sendMessage(String message) {
+    public void sendMessage(Object obj) {
         try {
-            out.write(message);
-            out.newLine();
+            out.writeObject(obj);
             out.flush();
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to send message", e);
-        }
-    }
-
-    private Set<String> parseParticipants(String input) {
-        Set<String> set = new HashSet<>();
-        if (input != null && !input.trim().isEmpty()) {
-            String[] names = input.split(",");
-            for (String name : names) {
-                set.add(name.trim());
-            }
-        }
-        return set;
-    }
-
-    private static String generateAnonymousName(String base) {
-        int count = anonCount.merge(base, 1, Integer::sum);
-        return base + count;
-    }
-
-    private void cleanup() {
-        try {
-            if (isAnonymous && partnerHandler != null) {
-                partnerHandler.sendMessage("[System] Your partner has left the chat.");
-                partnerHandler.partnerHandler = null;
-            }
-
-            if (username != null) {
-                userHandlers.remove(username);
-            }
-
-            if (chatRoom != null) {
-                chatRoom.removeParticipant(username);
-            }
-
-            if (in != null) in.close();
-            if (out != null) out.close();
-            textSocket.close();
-
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Cleanup failed", e);
+        } catch (Exception e) {
+            LoggerUtil.error("메시지 전송 실패", e);
         }
     }
 }
