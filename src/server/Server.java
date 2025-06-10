@@ -16,21 +16,7 @@ public class Server {
 
     public static void main(String[] args) {
         LoggerUtil.log("Starting server...");
-        ChatService chatService = new ChatService();
-
-        // 메시지 수신용 서버소켓
-        Thread msgThread = new Thread(() -> {
-            try (ServerSocket msgServerSocket = new ServerSocket(MSG_PORT)) {
-                LoggerUtil.log("Message Server listening on port " + MSG_PORT);
-                while (true) {
-                    Socket msgSocket = msgServerSocket.accept();
-                    LoggerUtil.log("New message client connected: " + msgSocket.getRemoteSocketAddress());
-                    new ClientHandler(msgSocket, chatService).start();
-                }
-            } catch (IOException e) {
-                LoggerUtil.error("Message server error", e);
-            }
-        });
+        Thread msgThread = getThread();
 
         // 파일 수신용 서버소켓
         Thread fileThread = new Thread(() -> {
@@ -50,5 +36,24 @@ public class Server {
         fileThread.start();
 
         LoggerUtil.log("Server started successfully.");
+    }
+
+    private static Thread getThread() {
+        ChatService chatService = new ChatService();
+
+        // 메시지 수신용 서버소켓
+        Thread msgThread = new Thread(() -> {
+            try (ServerSocket msgServerSocket = new ServerSocket(MSG_PORT)) {
+                LoggerUtil.log("Message Server listening on port " + MSG_PORT);
+                while (true) {
+                    Socket msgSocket = msgServerSocket.accept();
+                    LoggerUtil.log("New message client connected: " + msgSocket.getRemoteSocketAddress());
+                    new ClientHandler(msgSocket, chatService).start();
+                }
+            } catch (IOException e) {
+                LoggerUtil.error("Message server error", e);
+            }
+        });
+        return msgThread;
     }
 }

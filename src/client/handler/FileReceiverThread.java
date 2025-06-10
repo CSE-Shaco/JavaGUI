@@ -2,7 +2,6 @@ package client.handler;
 
 import shared.domain.FileInfo;
 
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.util.function.Consumer;
 
@@ -11,8 +10,8 @@ public class FileReceiverThread extends Thread {
     private final ObjectInputStream in;
     private final Consumer<FileInfo> fileHandler;
 
-    public FileReceiverThread(InputStream inputStream, Consumer<FileInfo> fileHandler) throws Exception {
-        this.in = new ObjectInputStream(inputStream);
+    public FileReceiverThread(ObjectInputStream in, Consumer<FileInfo> fileHandler) throws Exception {
+        this.in = in;
         this.fileHandler = fileHandler;
     }
 

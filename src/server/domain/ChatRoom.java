@@ -32,8 +32,13 @@ public class ChatRoom {
     }
 
     public void broadcastMessage(Object message) {
+        System.out.println("broadcast : " + message);
+
         for (ClientSession session : sessions) {
-            session.getClientHandler().sendMessage(message);
+            System.out.println("broadcast message: " + message);
+            if (session.getClientHandler() != null) {
+                session.getClientHandler().sendMessage(message);
+            }
         }
     }
 

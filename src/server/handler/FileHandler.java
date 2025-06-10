@@ -7,6 +7,7 @@ import shared.domain.FileInfo;
 import shared.util.LoggerUtil;
 
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 public class FileHandler extends Thread {
@@ -24,7 +25,12 @@ public class FileHandler extends Thread {
 
     @Override
     public void run() {
-        try (ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+
+            session.setFileOutputStream(out); // 이건 session.sendFile 에서 out 사용하기 위함
+
             while (true) {
                 Object obj = in.readObject();
                 if (obj instanceof FileInfo fileInfo) {
@@ -39,6 +45,7 @@ public class FileHandler extends Thread {
             LoggerUtil.error("파일 처리 실패", e);
         }
     }
+
 
     public void sendFile(FileInfo fileInfo) {
         try {

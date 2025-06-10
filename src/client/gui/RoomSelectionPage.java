@@ -21,6 +21,7 @@ public class RoomSelectionPage extends JFrame {
     public RoomSelectionPage(User user) {
         this.user = user;
 
+        System.out.println(">>> [RoomeSelectionPage] 생성자 진입");
         setTitle("참여할 채팅방을 선택하세요 - " + user.getDisplayName());
         setSize(480, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

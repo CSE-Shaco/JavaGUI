@@ -5,6 +5,9 @@ import server.handler.ClientHandler;
 import server.handler.FileHandler;
 import shared.domain.FileInfo;
 import shared.domain.User;
+import shared.util.LoggerUtil;
+
+import java.io.ObjectOutputStream;
 
 public class ClientSession {
 
@@ -12,6 +15,8 @@ public class ClientSession {
     private final FileHandler fileHandler;
     private User user;
     private ChatRoom chatRoom; // ✅ 추가
+    private final Object fileLock = new Object();
+    private ObjectOutputStream fileOut;
 
     public ClientSession(ClientHandler clientHandler, FileHandler fileHandler) {
         this.clientHandler = clientHandler;
@@ -46,8 +51,20 @@ public class ClientSession {
         this.chatRoom = chatRoom;
     }
 
-    public void sendFile(FileInfo fileInfo) {
-        // FileHandler는 수신 전용, 실제 전송은 메시지용 ClientHandler 사용
-        clientHandler.sendMessage(fileInfo);
+
+    public void setFileOutputStream(ObjectOutputStream out) {
+        this.fileOut = out;
     }
+
+    public void sendFile(FileInfo fileInfo) {
+        try {
+            synchronized (fileLock) {
+                fileOut.writeObject(fileInfo);
+                fileOut.flush();
+            }
+        } catch (Exception e) {
+            LoggerUtil.error("파일 전송 실패", e);
+        }
+    }
+
 }

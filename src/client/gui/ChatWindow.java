@@ -53,6 +53,7 @@ public class ChatWindow extends JFrame {
         inputField.addActionListener(new SendHandler());
         fileButton.addActionListener(e -> handleFileSelection());
 
+        System.out.println(">>> [ChatClient] 생성자 진입");
         client = new ChatClient("localhost", 12345, user, roomId, chatArea);
 
         setVisible(true);
