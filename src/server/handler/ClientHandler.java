@@ -5,15 +5,12 @@ import server.service.ChatService;
 import server.session.ClientSession;
 import shared.domain.User;
 import shared.dto.ClientRequest;
-import shared.dto.RoomListRequest;
-import shared.dto.RoomListResponse;
 import shared.dto.ServerResponse;
 import shared.util.LoggerUtil;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.Map;
 
 public class ClientHandler extends Thread {
 
@@ -29,12 +26,12 @@ public class ClientHandler extends Thread {
         this.chatService = chatService;
     }
 
-    public void setSession(ClientSession session) {
-        this.session = session;
-    }
-
     public ClientSession getSession() {
         return session;
+    }
+
+    public void setSession(ClientSession session) {
+        this.session = session;
     }
 
     @Override
@@ -43,29 +40,19 @@ public class ClientHandler extends Thread {
             // 반드시 ObjectOutputStream 먼저 생성
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
-
             LoggerUtil.log("Client connected: " + socket);
 
             while (true) {
                 Object obj = in.readObject();
-                System.out.println("받은 객체 타입: " + obj.getClass().getName());
-
-                // 방 목록 요청
-                if (obj instanceof RoomListRequest) {
-                    Map<String, Integer> roomMap = chatService.getRoomList();
-                    System.out.println("Room Request Sent");
-                    sendMessage(new RoomListResponse(roomMap));
-                }
 
                 // 일반 클라이언트 요청
-                else if (obj instanceof ClientRequest request) {
+                if (obj instanceof ClientRequest request) {
                     handleClientRequest(request);
                     System.out.println("Client request Sent");
                 }
             }
-
         } catch (Exception e) {
-            LoggerUtil.error("Exception Occurred", e);
+            LoggerUtil.error("Connection Lost", e);
         } finally {
             cleanup();
         }

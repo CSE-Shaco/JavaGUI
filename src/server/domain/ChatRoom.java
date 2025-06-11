@@ -31,8 +31,14 @@ public class ChatRoom {
         return sessions.size();
     }
 
+    public ClientSession findSessionByUsername(String username) {
+        return sessions.stream()
+                .filter(session -> session.getUser() != null && session.getUser().getUsername().equals(username))
+                .findFirst()
+                .orElse(null);
+    }
+
     public void broadcastMessage(Object message) {
-        System.out.println("broadcast : " + message);
 
         for (ClientSession session : sessions) {
             System.out.println("broadcast message: " + message);

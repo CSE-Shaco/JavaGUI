@@ -1,8 +1,10 @@
 package client.handler;
 
+import shared.dto.ClientRequest;
 import shared.dto.RoomListResponse;
 
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -22,10 +24,12 @@ public class RoomListFetcher extends Thread {
     @Override
     public void run() {
         try (socket; in) {
+
             Object obj = in.readObject();
             if (obj instanceof RoomListResponse response) {
                 callback.accept(response.getRooms());  // Map<String, Integer> 형태
             }
+
         } catch (Exception e) {
             System.err.println("Room list 수신 실패: " + e.getMessage());
         }

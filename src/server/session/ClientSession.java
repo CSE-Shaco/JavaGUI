@@ -12,19 +12,15 @@ import java.io.ObjectOutputStream;
 public class ClientSession {
 
     private final ClientHandler clientHandler;
-    private final FileHandler fileHandler;
+    private final Object fileLock = new Object();
+    private FileHandler fileHandler;
     private User user;
     private ChatRoom chatRoom; // ✅ 추가
-    private final Object fileLock = new Object();
     private ObjectOutputStream fileOut;
 
     public ClientSession(ClientHandler clientHandler, FileHandler fileHandler) {
         this.clientHandler = clientHandler;
-        this.fileHandler = fileHandler;
-        this.clientHandler.setSession(this);
-        if (this.fileHandler != null) {
-            this.fileHandler.setSession(this);
-        }
+        setFileHandler(fileHandler);
     }
 
     public User getUser() {
@@ -43,6 +39,13 @@ public class ClientSession {
         return fileHandler;
     }
 
+    public void setFileHandler(FileHandler fileHandler) {
+        this.fileHandler = fileHandler;
+        if (fileHandler != null) {
+            this.fileHandler.setSession(this);
+        }
+    }
+
     public ChatRoom getChatRoom() {
         return chatRoom;
     }
@@ -50,7 +53,6 @@ public class ClientSession {
     public void setChatRoom(ChatRoom chatRoom) {
         this.chatRoom = chatRoom;
     }
-
 
     public void setFileOutputStream(ObjectOutputStream out) {
         this.fileOut = out;
@@ -66,5 +68,4 @@ public class ClientSession {
             LoggerUtil.error("파일 전송 실패", e);
         }
     }
-
 }

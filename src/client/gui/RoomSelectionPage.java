@@ -61,15 +61,14 @@ public class RoomSelectionPage extends JFrame {
     private void fetchRoomList() {
         new Thread(() -> {
             try {
-                Socket socket = new Socket("localhost", 12345);
+                Socket socket = new Socket("localhost", 12347);
                 ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
                 out.writeObject(new RoomListRequest());
                 out.flush();
+                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
-                RoomListFetcher fetcher = new RoomListFetcher(socket, in, roomMap ->
-                        SwingUtilities.invokeLater(() -> updateRoomPanels(roomMap)));
+                RoomListFetcher fetcher = new RoomListFetcher(socket, in, roomMap -> SwingUtilities.invokeLater(() -> updateRoomPanels(roomMap)));
                 fetcher.start();
             } catch (Exception e) {
                 SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "방 목록을 불러올 수 없습니다."));
@@ -109,6 +108,7 @@ public class RoomSelectionPage extends JFrame {
             public void mouseEntered(MouseEvent e) {
                 panel.setBackground(new Color(245, 245, 255));
             }
+
             public void mouseExited(MouseEvent e) {
                 panel.setBackground(Color.WHITE);
             }

@@ -38,7 +38,6 @@ public class LandingPage extends JFrame {
             }
 
             User user = new User(username, displayName);
-            System.out.println(">>> [LandingPage] 입장 버튼 클릭됨"); // 이 로그 추가
 
             new RoomSelectionPage(user); // ✅ 여기로 변경
             dispose(); // 현재 창 닫기
