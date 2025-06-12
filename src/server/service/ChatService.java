@@ -3,7 +3,6 @@ package server.service;
 import server.domain.ChatRoom;
 import server.session.ClientSession;
 
-import java.net.InetAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;

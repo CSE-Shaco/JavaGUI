@@ -13,7 +13,15 @@ public class FileInfo implements Serializable {
         this.isImage = isImage;
     }
 
-    public String getFileName() { return fileName; }
-    public byte[] getData() { return data; }
-    public boolean isImage() { return isImage; }
+    public String getFileName() {
+        return fileName;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public boolean isImage() {
+        return isImage;
+    }
 }

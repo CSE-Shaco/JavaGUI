@@ -4,7 +4,6 @@ import server.handler.ClientHandler;
 import server.handler.FileHandler;
 import server.handler.RoomListHandler;
 import server.service.ChatService;
-import server.session.ClientSession;
 import shared.util.LoggerUtil;
 
 import java.io.IOException;

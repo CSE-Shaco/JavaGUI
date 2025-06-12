@@ -1,10 +1,8 @@
 package client.handler;
 
-import shared.dto.ClientRequest;
 import shared.dto.RoomListResponse;
 
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Map;
 import java.util.function.Consumer;

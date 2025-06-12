@@ -1,20 +1,18 @@
 package client.handler;
 
-import shared.dto.RoomListResponse;
 import shared.dto.ServerResponse;
 
-import javax.swing.*;
 import java.io.ObjectInputStream;
-import java.util.List;
+import java.util.function.Consumer;
 
 public class MessageReceiverThread extends Thread {
 
     private final ObjectInputStream in;
-    private final JTextArea chatArea;
+    private final Consumer<String> messageConsumer;
 
-    public MessageReceiverThread(ObjectInputStream in, JTextArea chatArea) {
+    public MessageReceiverThread(ObjectInputStream in, Consumer<String> messageConsumer) {
         this.in = in;
-        this.chatArea = chatArea;
+        this.messageConsumer = messageConsumer;
     }
 
     @Override
@@ -25,15 +23,12 @@ public class MessageReceiverThread extends Thread {
                 if (obj instanceof ServerResponse response) {
                     String sender = response.getSender();
                     String content = response.getContent();
-                    if (response.isSystemMessage()) {
-                        chatArea.append("[System] " + content + "\n");
-                    } else {
-                        chatArea.append(sender + " : " + content + "\n");
-                    }
+                    String message = response.isSystemMessage() ? "[System] " + content : sender + " : " + content;
+                    messageConsumer.accept(message);
                 }
             }
         } catch (Exception e) {
-            chatArea.append("[System] 서버 연결이 끊겼습니다.\n");
+            messageConsumer.accept("[System] 서버 연결이 끊겼습니다.");
         }
     }
 }

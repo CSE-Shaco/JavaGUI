@@ -22,6 +22,7 @@ public class FileReceiverThread extends Thread {
                 Object obj = in.readObject();
                 if (obj instanceof FileInfo fileInfo) {
                     fileHandler.accept(fileInfo);
+                    System.out.println(fileInfo.getFileName());
                 }
             }
         } catch (Exception e) {

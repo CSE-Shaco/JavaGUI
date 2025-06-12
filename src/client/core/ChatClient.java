@@ -4,14 +4,15 @@ import client.handler.FileReceiverThread;
 import client.handler.MessageReceiverThread;
 import client.util.FileSender;
 import client.util.MessageSender;
+import shared.domain.FileInfo;
 import shared.domain.User;
 import shared.dto.ClientRequest;
-import shared.dto.FileInitRequest;
 
 import javax.swing.*;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.function.Consumer;
 
 public class ChatClient {
 
@@ -22,41 +23,37 @@ public class ChatClient {
     private final MessageSender sender;
     private final FileSender fileSender;
 
-    public ChatClient(String host, int msgPort, User user, String roomId, JTextArea chatArea) {
+    public ChatClient(String host, int msgPort, User user, String roomId, Consumer<String> messageConsumer, Consumer<FileInfo> fileConsumer) {
         this.user = user;
         this.roomId = roomId;
         try {
             this.messageSocket = new Socket(host, msgPort);
-
             this.fileSocket = new Socket(host, msgPort + 1);
 
             ObjectOutputStream msgOut = new ObjectOutputStream(messageSocket.getOutputStream());
-
             ObjectInputStream msgIn = new ObjectInputStream(messageSocket.getInputStream());
 
             ObjectOutputStream fileOut = new ObjectOutputStream(fileSocket.getOutputStream());
             ObjectInputStream fileIn = new ObjectInputStream(fileSocket.getInputStream());
 
-            this.sender = new MessageSender(msgOut);
-            this.fileSender = new FileSender(fileOut);
+            sender = new MessageSender(msgOut);
+            fileSender = new FileSender(fileOut);
 
-// ✅ 파일 핸들러 초기화 요청 보내기 (반드시 ObjectStream 생성 직후)
-            fileOut.writeObject(new FileInitRequest(user, roomId));
-            fileOut.flush();
-
-            MessageReceiverThread receiverThread = new MessageReceiverThread(msgIn, chatArea);
+            // 메시지 수신 스레드
+            MessageReceiverThread receiverThread = new MessageReceiverThread(msgIn, messageConsumer);
             receiverThread.start();
 
-            try {
-                FileReceiverThread fileReceiverThread = new FileReceiverThread(fileIn, fileInfo -> SwingUtilities.invokeLater(() -> chatArea.append("수신된 파일: " + fileInfo.getFileName() + "\n")));
-                fileReceiverThread.start();
-            } catch (Exception ex) {
-                System.err.println("fileReceiverThread 예외 발생: " + ex.getMessage());
-                ex.printStackTrace();
-            }
+            // 파일 수신 스레드
+            FileReceiverThread fileReceiverThread = new FileReceiverThread(fileIn, fileConsumer);
+            fileReceiverThread.start();
 
+            // 초기 입장 및 파일 핸들러 초기화 요청
             ClientRequest joinRequest = new ClientRequest("join", user.getDisplayName() + "님이 입장하셨습니다.", roomId, user, null);
             sender.sendRequest(joinRequest);
+            Thread.sleep(100);
+            ClientRequest fileInitRequest = new ClientRequest("fileInit", "", roomId, user, null);
+            fileSender.sendRequest(fileInitRequest);
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "서버 연결 실패: " + e.getMessage());
             throw new RuntimeException(e);

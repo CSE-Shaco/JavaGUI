@@ -5,7 +5,7 @@ import server.service.ChatService;
 import server.session.ClientSession;
 import shared.domain.FileInfo;
 import shared.domain.User;
-import shared.dto.FileInitRequest;
+import shared.dto.ClientRequest;
 import shared.util.LoggerUtil;
 
 import java.io.ObjectInputStream;
@@ -29,40 +29,56 @@ public class FileHandler extends Thread {
 
     @Override
     public void run() {
-        try (ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream()); ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
-            Object obj = in.readObject();
-            if (!(obj instanceof FileInitRequest initRequest)) {
-                LoggerUtil.error("FileHandler 초기 요청이 잘못되었습니다.", new Exception("논리적 예외"));
-                return;
-            }
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
-            String roomId = initRequest.getRoomId();
-            User user = initRequest.getUser();
-
-            ChatRoom room = chatService.getRoomById(roomId);
-            if (room == null) {
-                LoggerUtil.error("FileHandler: 존재하지 않는 방 " + roomId, new Exception("논리적 예외"));
-                return;
-            }
-
-            ClientSession foundSession = room.findSessionByUsername(user.getUsername());
-            if (foundSession == null) {
-                LoggerUtil.error("FileHandler: 해당 사용자의 세션을 찾을 수 없음", new Exception("논리적 예외"));
-                return;
-            }
-
-            this.session = foundSession;
-            this.session.setFileHandler(this);
-            this.session.setFileOutputStream(out);
-
-            LoggerUtil.log("FileHandler 연결 완료: " + user.getUsername());
-
-            // 실제 파일 수신 처리
             while (true) {
-                Object data = in.readObject();
-                if (data instanceof FileInfo fileInfo) {
-                    room.broadcastFile(fileInfo);
-                    LoggerUtil.log("파일 수신 및 브로드캐스트 완료: " + fileInfo.getFileName());
+                Object obj = in.readObject();
+                if (!(obj instanceof ClientRequest request)) {
+                    LoggerUtil.error("FileHandler: 잘못된 요청 수신", new Exception("유효하지 않은 객체"));
+                    continue;
+                }
+
+                String action = request.getAction();
+                String roomId = request.getRoomId();
+                User user = request.getUser();
+
+                switch (action) {
+                    case "fileInit" -> {
+                        ChatRoom room = chatService.getRoomById(roomId);
+                        if (room == null) {
+                            LoggerUtil.error("FileHandler: 존재하지 않는 방 " + roomId, new Exception("논리적 예외"));
+                            return;
+                        }
+
+                        ClientSession foundSession = room.findSessionByUsername(user.getUsername());
+                        if (foundSession == null) {
+                            LoggerUtil.error("FileHandler: 해당 사용자의 세션을 찾을 수 없음", new Exception("논리적 예외"));
+                            return;
+                        }
+
+                        this.session = foundSession;
+                        this.session.setFileHandler(this);
+                        this.session.setFileOutputStream(out);
+                        LoggerUtil.log("FileHandler 연결 완료: " + user.getUsername());
+                    }
+
+                    case "sendFile" -> {
+                        FileInfo fileInfo = request.getFileInfo();
+                        if (session == null) {
+                            LoggerUtil.error("FileHandler: 초기화되지 않은 세션에서 파일 전송 시도", new Exception("초기화 필요"));
+                            return;
+                        }
+
+                        ChatRoom room = chatService.getRoomById(roomId);
+                        if (room == null) return;
+
+                        room.broadcastFile(fileInfo);
+                        LoggerUtil.log("파일 수신 및 브로드캐스트 완료: " + fileInfo.getFileName());
+                    }
+
+                    default -> LoggerUtil.error("FileHandler: 지원하지 않는 액션: " + action, new Exception("알 수 없는 액션"));
                 }
             }
         } catch (Exception e) {

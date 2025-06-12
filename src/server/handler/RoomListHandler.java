@@ -35,7 +35,8 @@ public class RoomListHandler extends Thread {
         } finally {
             try {
                 socket.close();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
     }
 }

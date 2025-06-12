@@ -4,26 +4,30 @@ import shared.domain.FileInfo;
 import shared.domain.User;
 import shared.dto.ClientRequest;
 
+import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 
 public class FileSender {
 
     private final ObjectOutputStream out;
 
-    public FileSender(OutputStream outputStream) throws Exception {
-        this.out = new ObjectOutputStream(outputStream);
+    public FileSender(ObjectOutputStream out) {
+        this.out = out;
     }
 
     public void sendFile(FileInfo fileInfo, User user, String roomId) {
+        ClientRequest request = new ClientRequest("sendFile", "", roomId, user, fileInfo);
+        sendRequest(request);
+    }
+
+    public void sendRequest(ClientRequest request) {
         new Thread(() -> {
             try {
-                ClientRequest request = new ClientRequest("sendFile", "", roomId, user, fileInfo);
                 synchronized (out) {
                     out.writeObject(request);
                     out.flush();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 System.err.println("파일 전송 실패: " + e.getMessage());
             }
         }).start();
