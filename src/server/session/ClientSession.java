@@ -3,8 +3,8 @@ package server.session;
 import server.domain.ChatRoom;
 import server.handler.ClientHandler;
 import server.handler.FileHandler;
-import shared.domain.FileInfo;
 import shared.domain.User;
+import shared.dto.ServerResponse;
 import shared.util.LoggerUtil;
 
 import java.io.ObjectOutputStream;
@@ -58,10 +58,10 @@ public class ClientSession {
         this.fileOut = out;
     }
 
-    public void sendFile(FileInfo fileInfo) {
+    public void sendFile(ServerResponse response) {
         try {
             synchronized (fileLock) {
-                fileOut.writeObject(fileInfo);
+                fileOut.writeObject(response);
                 fileOut.flush();
             }
         } catch (Exception e) {

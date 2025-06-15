@@ -3,6 +3,8 @@ package client.gui;
 import client.core.ChatClient;
 import shared.domain.FileInfo;
 import shared.domain.User;
+import shared.dto.FileResponse;
+import shared.dto.MessageResponse;
 
 import javax.swing.*;
 import java.awt.*;
@@ -69,16 +71,17 @@ public class ChatWindow extends JFrame {
         if (result == JFileChooser.APPROVE_OPTION) {
             selectedFile = chooser.getSelectedFile();
             inputField.setEnabled(false);
-            appendTextMessage("\uD83D\uDCCE 파일 전송 대기 중: " + selectedFile.getName());
         }
     }
 
-    private void appendTextMessage(String message) {
+    private void appendTextMessage(MessageResponse response) {
+        String sender = response.getSender();
+        String message = response.getMessage();
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
         wrapper.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
-        JTextArea textArea = new JTextArea(message);
+        JTextArea textArea = new JTextArea(sender + " : " + message);
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
         textArea.setEditable(false);
@@ -87,12 +90,10 @@ public class ChatWindow extends JFrame {
         textArea.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         textArea.setMaximumSize(new Dimension(300, Integer.MAX_VALUE));  // ✅ 최대 폭 제한
 
-        if (message.startsWith("[System]")) {
+        if (response.isSystemMessage()) {
             textArea.setBackground(Color.LIGHT_GRAY);
             wrapper.add(textArea, BorderLayout.CENTER);
         } else {
-            int sepIdx = message.indexOf(" : ");
-            String sender = sepIdx > 0 ? message.substring(0, sepIdx).trim() : "";
             boolean isMine = sender.equals(user.getDisplayName());
 
             if (isMine) {
@@ -111,7 +112,8 @@ public class ChatWindow extends JFrame {
     }
 
 
-    public void handleReceivedFile(FileInfo fileInfo) {
+    public void handleReceivedFile(FileResponse response) {
+        FileInfo fileInfo = response.getFileInfo();
         if (fileInfo.isImage()) {
             ImageIcon icon = new ImageIcon(fileInfo.getData());
             Image scaled = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
@@ -159,10 +161,11 @@ public class ChatWindow extends JFrame {
 
     private void scrollToBottom() {
         SwingUtilities.invokeLater(() -> {
-            JScrollBar vertical = chatScrollPane.getVerticalScrollBar();
-            vertical.setValue(vertical.getMaximum());
+            chatPanel.revalidate(); // 새 컴포넌트 레이아웃 갱신
+            chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());
         });
     }
+
 
     private class SendHandler implements ActionListener {
         @Override
@@ -175,7 +178,6 @@ public class ChatWindow extends JFrame {
                         FileInfo fileInfo = new FileInfo(selectedFile.getName(), fileData, isImage);
                         client.getFileSender().sendFile(fileInfo, user, roomId);
                         SwingUtilities.invokeLater(() -> {
-                            appendTextMessage("✅ 파일 전송 완료: " + selectedFile.getName());
                             selectedFile = null;
                             inputField.setEnabled(true);
                             inputField.setText("");

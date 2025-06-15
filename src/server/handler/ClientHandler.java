@@ -5,6 +5,7 @@ import server.service.ChatService;
 import server.session.ClientSession;
 import shared.domain.User;
 import shared.dto.ClientRequest;
+import shared.dto.MessageResponse;
 import shared.dto.ServerResponse;
 import shared.util.LoggerUtil;
 
@@ -79,17 +80,17 @@ public class ClientHandler extends Thread {
             case "join" -> {
                 String msg = user.getDisplayName() + "님이 입장하셨습니다.";
                 System.out.println(msg);
-                ServerResponse response = new ServerResponse("server", msg, roomId, true);
+                ServerResponse response = new MessageResponse("server", roomId, msg, true);
                 room.broadcastMessage(response);
             }
             case "sendMessage" -> {
                 String msg = request.getContent();
-                ServerResponse response = new ServerResponse(user.getDisplayName(), msg, roomId, false);
+                ServerResponse response = new MessageResponse(user.getDisplayName(), roomId, msg, false);
                 room.broadcastMessage(response);
             }
             case "quit" -> {
                 String msg = user.getDisplayName() + "님이 퇴장하셨습니다.";
-                ServerResponse response = new ServerResponse("server", msg, roomId, true);
+                ServerResponse response = new MessageResponse("server", roomId, msg, true);
                 room.broadcastMessage(response);
                 chatService.removeSession(session);
             }

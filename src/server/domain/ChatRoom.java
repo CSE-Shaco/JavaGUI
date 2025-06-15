@@ -1,7 +1,7 @@
 package server.domain;
 
 import server.session.ClientSession;
-import shared.domain.FileInfo;
+import shared.dto.ServerResponse;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,9 +48,9 @@ public class ChatRoom {
         }
     }
 
-    public void broadcastFile(FileInfo fileInfo) {
+    public void broadcastFile(ServerResponse response) {
         for (ClientSession session : sessions) {
-            session.getFileHandler().sendFile(fileInfo);
+            session.getFileHandler().sendFile(response);
         }
     }
 }

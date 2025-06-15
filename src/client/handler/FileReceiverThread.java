@@ -1,6 +1,6 @@
 package client.handler;
 
-import shared.domain.FileInfo;
+import shared.dto.FileResponse;
 
 import java.io.ObjectInputStream;
 import java.util.function.Consumer;
@@ -8,9 +8,9 @@ import java.util.function.Consumer;
 public class FileReceiverThread extends Thread {
 
     private final ObjectInputStream in;
-    private final Consumer<FileInfo> fileHandler;
+    private final Consumer<FileResponse> fileHandler;
 
-    public FileReceiverThread(ObjectInputStream in, Consumer<FileInfo> fileHandler) throws Exception {
+    public FileReceiverThread(ObjectInputStream in, Consumer<FileResponse> fileHandler) throws Exception {
         this.in = in;
         this.fileHandler = fileHandler;
     }
@@ -20,9 +20,9 @@ public class FileReceiverThread extends Thread {
         try {
             while (true) {
                 Object obj = in.readObject();
-                if (obj instanceof FileInfo fileInfo) {
-                    fileHandler.accept(fileInfo);
-                    System.out.println(fileInfo.getFileName());
+                if (obj instanceof FileResponse response) {
+                    fileHandler.accept(response);
+                    System.out.println(response.getFileInfo().getFileName());
                 }
             }
         } catch (Exception e) {

@@ -7,6 +7,9 @@ import client.util.MessageSender;
 import shared.domain.FileInfo;
 import shared.domain.User;
 import shared.dto.ClientRequest;
+import shared.dto.FileResponse;
+import shared.dto.MessageResponse;
+import shared.dto.ServerResponse;
 
 import javax.swing.*;
 import java.io.ObjectInputStream;
@@ -23,7 +26,7 @@ public class ChatClient {
     private final MessageSender sender;
     private final FileSender fileSender;
 
-    public ChatClient(String host, int msgPort, User user, String roomId, Consumer<String> messageConsumer, Consumer<FileInfo> fileConsumer) {
+    public ChatClient(String host, int msgPort, User user, String roomId, Consumer<MessageResponse> messageConsumer, Consumer<FileResponse> fileConsumer) {
         this.user = user;
         this.roomId = roomId;
         try {

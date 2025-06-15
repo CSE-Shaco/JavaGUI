@@ -6,6 +6,8 @@ import server.session.ClientSession;
 import shared.domain.FileInfo;
 import shared.domain.User;
 import shared.dto.ClientRequest;
+import shared.dto.FileResponse;
+import shared.dto.ServerResponse;
 import shared.util.LoggerUtil;
 
 import java.io.ObjectInputStream;
@@ -74,7 +76,9 @@ public class FileHandler extends Thread {
                         ChatRoom room = chatService.getRoomById(roomId);
                         if (room == null) return;
 
-                        room.broadcastFile(fileInfo);
+                        FileResponse response = new FileResponse(user.getDisplayName(), roomId, fileInfo);
+
+                        room.broadcastFile(response);
                         LoggerUtil.log("파일 수신 및 브로드캐스트 완료: " + fileInfo.getFileName());
                     }
 
@@ -86,9 +90,9 @@ public class FileHandler extends Thread {
         }
     }
 
-    public void sendFile(FileInfo fileInfo) {
+    public void sendFile(ServerResponse response) {
         try {
-            session.sendFile(fileInfo);
+            session.sendFile(response);
         } catch (Exception e) {
             LoggerUtil.error("파일 전송 실패", e);
         }

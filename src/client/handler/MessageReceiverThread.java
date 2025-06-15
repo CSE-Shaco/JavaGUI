@@ -1,6 +1,9 @@
 package client.handler;
 
+import server.Server;
+import shared.dto.MessageResponse;
 import shared.dto.ServerResponse;
+import shared.util.LoggerUtil;
 
 import java.io.ObjectInputStream;
 import java.util.function.Consumer;
@@ -8,9 +11,9 @@ import java.util.function.Consumer;
 public class MessageReceiverThread extends Thread {
 
     private final ObjectInputStream in;
-    private final Consumer<String> messageConsumer;
+    private final Consumer<MessageResponse> messageConsumer;
 
-    public MessageReceiverThread(ObjectInputStream in, Consumer<String> messageConsumer) {
+    public MessageReceiverThread(ObjectInputStream in, Consumer<MessageResponse> messageConsumer) {
         this.in = in;
         this.messageConsumer = messageConsumer;
     }
@@ -20,15 +23,12 @@ public class MessageReceiverThread extends Thread {
         try {
             while (true) {
                 Object obj = in.readObject();
-                if (obj instanceof ServerResponse response) {
-                    String sender = response.getSender();
-                    String content = response.getContent();
-                    String message = response.isSystemMessage() ? "[System] " + content : sender + " : " + content;
-                    messageConsumer.accept(message);
+                if (obj instanceof MessageResponse response) {
+                    messageConsumer.accept(response);
                 }
             }
         } catch (Exception e) {
-            messageConsumer.accept("[System] 서버 연결이 끊겼습니다.");
+            LoggerUtil.error("서버와의 연결이 종료되었습니다.", e);
         }
     }
 }
