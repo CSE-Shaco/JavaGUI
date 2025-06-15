@@ -1,6 +1,7 @@
 package client.gui;
 
 import client.core.ChatClient;
+import client.gui.component.ChatBubble;
 import shared.domain.FileInfo;
 import shared.domain.User;
 import shared.dto.FileResponse;
@@ -19,10 +20,9 @@ public class ChatWindow extends JFrame {
     private final String roomId;
     private final JTextField inputField;
     private final ChatClient client;
-    private File selectedFile = null;
-
     private final JPanel chatPanel;
     private final JScrollPane chatScrollPane;
+    private File selectedFile = null;
 
     public ChatWindow(User user, String roomId) {
         this.user = user;
@@ -58,7 +58,6 @@ public class ChatWindow extends JFrame {
         client = new ChatClient("localhost", 12345, user, roomId, this::appendTextMessage,  // 또는 sender를 msg에 포함하도록 포맷
                 this::handleReceivedFile);
 
-
         setVisible(true);
     }
 
@@ -75,42 +74,14 @@ public class ChatWindow extends JFrame {
     }
 
     private void appendTextMessage(MessageResponse response) {
-        String sender = response.getSender();
-        String message = response.getMessage();
-        JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setOpaque(false);
-        wrapper.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        boolean isMine = !response.isSystemMessage() && response.getSender().equals(user.getDisplayName());
+        ChatBubble bubble = new ChatBubble(response, isMine);
 
-        JTextArea textArea = new JTextArea(sender + " : " + message);
-        textArea.setLineWrap(true);
-        textArea.setWrapStyleWord(true);
-        textArea.setEditable(false);
-        textArea.setOpaque(true);
-        textArea.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        textArea.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
-        textArea.setMaximumSize(new Dimension(300, Integer.MAX_VALUE));  // ✅ 최대 폭 제한
-
-        if (response.isSystemMessage()) {
-            textArea.setBackground(Color.LIGHT_GRAY);
-            wrapper.add(textArea, BorderLayout.CENTER);
-        } else {
-            boolean isMine = sender.equals(user.getDisplayName());
-
-            if (isMine) {
-                textArea.setBackground(new Color(0xDFFFD6)); // 연두
-                wrapper.add(textArea, BorderLayout.EAST);
-            } else {
-                textArea.setBackground(Color.WHITE);
-                wrapper.add(textArea, BorderLayout.WEST);
-            }
-        }
-
-        chatPanel.add(wrapper);
+        chatPanel.add(bubble);
         chatPanel.revalidate();
         chatPanel.repaint();
         scrollToBottom();
     }
-
 
     public void handleReceivedFile(FileResponse response) {
         FileInfo fileInfo = response.getFileInfo();
@@ -166,8 +137,8 @@ public class ChatWindow extends JFrame {
         });
     }
 
-
     private class SendHandler implements ActionListener {
+
         @Override
         public void actionPerformed(ActionEvent e) {
             if (selectedFile != null) {

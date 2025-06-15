@@ -80,7 +80,7 @@ public class ClientHandler extends Thread {
             case "join" -> {
                 String msg = user.getDisplayName() + "님이 입장하셨습니다.";
                 System.out.println(msg);
-                ServerResponse response = new MessageResponse("server", roomId, msg, true);
+                ServerResponse response = new MessageResponse("", roomId, msg, true);
                 room.broadcastMessage(response);
             }
             case "sendMessage" -> {
@@ -90,7 +90,7 @@ public class ClientHandler extends Thread {
             }
             case "quit" -> {
                 String msg = user.getDisplayName() + "님이 퇴장하셨습니다.";
-                ServerResponse response = new MessageResponse("server", roomId, msg, true);
+                ServerResponse response = new MessageResponse("", roomId, msg, true);
                 room.broadcastMessage(response);
                 chatService.removeSession(session);
             }
