@@ -20,7 +20,7 @@ public class ChatBubble extends JPanel {
         int measuredWidth = (int) ((preLabel.getPreferredSize().width - 16) / 1.5);
         int finalWidth = Math.min(measuredWidth, baseWidth);
 
-        JLabel bubbleLabel = isSystem ? preLabel : new JLabel(buildStyledHtml(sender, message, isMine, isSystem, finalWidth));
+        JLabel bubbleLabel = isSystem ? preLabel : new JLabel(buildStyledHtml(sender, message, isMine, false, finalWidth));
         int height = bubbleLabel.getPreferredSize().height;
         this.setMaximumSize(new Dimension(Integer.MAX_VALUE, height + 16)); // ✅ 이 줄 매우 중요
 
