@@ -34,7 +34,8 @@ public class ChatBubble extends JPanel {
         textPane.setBorder(BorderFactory.createLineBorder(Color.BLUE));  // ✅ 텍스트 패널 테두리
         textPane.setCaret(new DefaultCaret() {
             @Override
-            public void paint(Graphics g) {}
+            public void paint(Graphics g) {
+            }
         });
 
         // 정렬
@@ -45,12 +46,12 @@ public class ChatBubble extends JPanel {
         // 배경색
         textPane.setBackground(isMine ? new Color(0xDFFFD6) : Color.WHITE);
 
-        // 높이 측정
-        textPane.setSize(MAX_WIDTH, Short.MAX_VALUE);
+        // ✅ 레이아웃 강제 갱신 후 높이 정확히 측정
+        textPane.setSize(new Dimension(MAX_WIDTH, Short.MAX_VALUE));
         textPane.revalidate();
         View rootView = textPane.getUI().getRootView(textPane);
         float preferredHeight = rootView.getPreferredSpan(View.Y_AXIS);
-        Dimension size = new Dimension(MAX_WIDTH, (int) preferredHeight + 20);
+        Dimension size = new Dimension(MAX_WIDTH, (int) preferredHeight + 24);
 
         textPane.setPreferredSize(size);
         textPane.setMaximumSize(size);
@@ -62,7 +63,7 @@ public class ChatBubble extends JPanel {
         wrapper.add(textPane, BorderLayout.CENTER);
         wrapper.setMaximumSize(size);
         wrapper.setPreferredSize(size);
-        wrapper.setMinimumSize(new Dimension(50, textPane.getPreferredSize().height + 24));
+        wrapper.setMinimumSize(new Dimension(50, size.height + 24));
 
         // 정렬 방식에 따라 위치 배치
         if (response.isSystemMessage()) {
