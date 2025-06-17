@@ -1,81 +1,66 @@
 package client.gui.component;
 
-import client.gui.util.WrapEditorKit;
 import shared.dto.MessageResponse;
 
 import javax.swing.*;
-import javax.swing.text.DefaultCaret;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.View;
 import java.awt.*;
 
 public class ChatBubble extends JPanel {
 
-    private static final int MAX_WIDTH = 320;
-
     public ChatBubble(MessageResponse response, boolean isMine) {
+        int baseWidth = 200;
         setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
         setOpaque(false);
-        setBorder(BorderFactory.createLineBorder(Color.RED));  // ✅ ChatBubble 전체 테두리
 
-        // 메시지 텍스트 구성
         String sender = response.getSender();
-        String message = response.getMessage();
-        String fullMessage = (response.isSystemMessage() ? "[System] " : (isMine ? "" : sender + " : ")) + message;
+        String message = insertSoftBreaks(response.getMessage(), 10);
+        boolean isSystem = response.isSystemMessage();
 
-        // JTextPane 설정
-        JTextPane textPane = new JTextPane();
-        textPane.setEditorKit(new WrapEditorKit());
-        textPane.setText(fullMessage);
-        textPane.setEditable(false);
-        textPane.setOpaque(true);
-        textPane.setFont(new Font("SansSerif", response.isSystemMessage() ? Font.ITALIC : Font.PLAIN, 13));
-        textPane.setBorder(BorderFactory.createLineBorder(Color.BLUE));  // ✅ 텍스트 패널 테두리
-        textPane.setCaret(new DefaultCaret() {
-            @Override
-            public void paint(Graphics g) {
-            }
-        });
+        JLabel preLabel = new JLabel(buildStyledHtml(sender, message, isMine, isSystem, 0));
+        int measuredWidth = (int) ((preLabel.getPreferredSize().width - 16) / 1.5);
+        int finalWidth = Math.min(measuredWidth, baseWidth);
 
-        // 정렬
-        SimpleAttributeSet attr = new SimpleAttributeSet();
-        StyleConstants.setAlignment(attr, response.isSystemMessage() ? StyleConstants.ALIGN_CENTER : isMine ? StyleConstants.ALIGN_RIGHT : StyleConstants.ALIGN_LEFT);
-        textPane.setParagraphAttributes(attr, true);
+        JLabel bubbleLabel = isSystem ? preLabel : new JLabel(buildStyledHtml(sender, message, isMine, isSystem, finalWidth));
+        int height = bubbleLabel.getPreferredSize().height;
+        this.setMaximumSize(new Dimension(Integer.MAX_VALUE, height + 16)); // ✅ 이 줄 매우 중요
 
-        // 배경색
-        textPane.setBackground(isMine ? new Color(0xDFFFD6) : Color.WHITE);
+        Dimension labelSize = bubbleLabel.getPreferredSize();
 
-        // ✅ 레이아웃 강제 갱신 후 높이 정확히 측정
-        textPane.setSize(new Dimension(MAX_WIDTH, Short.MAX_VALUE));
-        textPane.revalidate();
-        View rootView = textPane.getUI().getRootView(textPane);
-        float preferredHeight = rootView.getPreferredSpan(View.Y_AXIS);
-        Dimension size = new Dimension(MAX_WIDTH, (int) preferredHeight + 24);
-
-        textPane.setPreferredSize(size);
-        textPane.setMaximumSize(size);
-
-        // 래퍼 패널
-        JPanel wrapper = new JPanel(new BorderLayout());
+        // ✅ 말풍선 wrapper
+        JPanel wrapper = new JPanel(new FlowLayout(isSystem ? FlowLayout.CENTER : isMine ? FlowLayout.RIGHT : FlowLayout.LEFT));
         wrapper.setOpaque(false);
-        wrapper.setBorder(BorderFactory.createLineBorder(Color.GREEN));  // ✅ wrapper 패널 테두리
-        wrapper.add(textPane, BorderLayout.CENTER);
-        wrapper.setMaximumSize(size);
-        wrapper.setPreferredSize(size);
-        wrapper.setMinimumSize(new Dimension(50, size.height + 24));
+        wrapper.add(bubbleLabel);
+        wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, labelSize.height));
 
-        // 정렬 방식에 따라 위치 배치
-        if (response.isSystemMessage()) {
-            add(Box.createHorizontalGlue());
-            add(wrapper);
-            add(Box.createHorizontalGlue());
-        } else if (isMine) {
-            add(Box.createHorizontalGlue());
-            add(wrapper);
-        } else {
-            add(wrapper);
-            add(Box.createHorizontalGlue());
+        add(wrapper);
+    }
+
+    public static String insertSoftBreaks(String text, int threshold) {
+        StringBuilder sb = new StringBuilder();
+        for (String word : text.split(" ")) {
+            if (word.length() > threshold) {
+                for (int i = 0; i < word.length(); i++) {
+                    sb.append(word.charAt(i));
+                    if ((i + 1) % threshold == 0) {
+                        sb.append("<wbr>"); // soft wrap
+                    }
+                }
+            } else {
+                sb.append(word);
+            }
+            sb.append(" ");
         }
+        return sb.toString().trim();
+    }
+
+    public static String buildStyledHtml(String sender, String message, boolean isMine, boolean isSystem, int width) {
+        String prefix = isSystem ? "[System] " : isMine ? "" : sender + " : ";
+        String full = prefix + message;
+        String align = isSystem ? "center" : "left";
+        String bg = isMine ? "#DFFFD6" : "#FFFFFF";
+        String fontStyle = isSystem ? "italic" : "normal";
+        String widthStyle = (width > 0) ? "width:" + width + "px;" : "";
+
+        return "<html><div style='" + widthStyle + "text-align:" + align + ";" + "background-color:" + bg + ";" + "font-style:" + fontStyle + ";" + "padding:8px;" + "'>" + full + "</div></html>";
     }
 }
