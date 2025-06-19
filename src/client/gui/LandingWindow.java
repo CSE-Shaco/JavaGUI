@@ -5,9 +5,9 @@ import shared.domain.User;
 import javax.swing.*;
 import java.awt.*;
 
-public class LandingPage extends JFrame {
+public class LandingWindow extends JFrame {
 
-    public LandingPage() {
+    public LandingWindow() {
         setTitle("채팅 프로그램 - 로그인");
         setSize(350, 200);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -39,7 +39,7 @@ public class LandingPage extends JFrame {
 
             User user = new User(username, displayName);
 
-            new RoomSelectionPage(user); // ✅ 여기로 변경
+            new RoomSelectionWindow(user); // ✅ 여기로 변경
             dispose(); // 현재 창 닫기
         });
 

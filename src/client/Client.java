@@ -1,9 +1,9 @@
 package client;
 
-import client.gui.LandingPage;
+import client.gui.LandingWindow;
 
 public class Client {
     public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(LandingPage::new);
+        javax.swing.SwingUtilities.invokeLater(LandingWindow::new);
     }
 }

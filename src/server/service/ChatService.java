@@ -2,14 +2,18 @@ package server.service;
 
 import server.domain.ChatRoom;
 import server.session.ClientSession;
+import shared.dto.MessageResponse;
 
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 public class ChatService {
 
     private final Map<String, ChatRoom> roomMap = new ConcurrentHashMap<>();
+    private final Queue<ClientSession> waitingQueue = new LinkedBlockingQueue<>();
 
     public ChatRoom getOrCreateRoom(String roomId) {
         return roomMap.computeIfAbsent(roomId, ChatRoom::new);
@@ -21,17 +25,58 @@ public class ChatService {
 
     public void removeSession(ClientSession session) {
         for (ChatRoom room : roomMap.values()) {
-            room.removeSession(session);
-            if (room.getParticipantCount() == 0) {
-                roomMap.remove(room.getRoomId());
+            if (room.getSessions().contains(session)) {
+                room.removeSession(session);
+
+                if (room.isAnonymous() && room.getParticipantCount() == 1) {
+                    ClientSession survivor = room.getSessions().iterator().next();
+                    MessageResponse response = new MessageResponse("", session.getChatRoom().getRoomId(), "rematch_response", true);
+                    room.broadcastMessage(response);
+                    room.removeSession(survivor);
+                    roomMap.remove(room.getRoomId());
+
+                    return;
+                }
+
+                // 일반 방에서 모두 나간 경우 삭제
+                if (room.getParticipantCount() == 0) {
+                    roomMap.remove(room.getRoomId());
+                }
                 break;
             }
         }
     }
 
     public Map<String, Integer> getRoomList() {
-        return roomMap.entrySet()
-                .stream()
+        return roomMap.entrySet().stream().filter(entry -> !entry.getValue().isAnonymous()) // 익명 방 제외
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getParticipantCount()));
+    }
+
+
+    public synchronized ChatRoom startRandomChat(ClientSession requester) {
+        if (waitingQueue.contains(requester)) {
+            return null; // 이미 대기 중이면 아무것도 안 함
+        }
+
+        if (!waitingQueue.isEmpty()) {
+            ClientSession partner = waitingQueue.poll();
+
+            // 이 시점에서 방 생성
+            String roomId = "anonymous-" + System.currentTimeMillis();
+            ChatRoom room = new ChatRoom(roomId, true);
+            room.addSession(partner);
+            room.addSession(requester);
+            roomMap.put(roomId, room);
+
+            return room;
+        } else {
+            // 아무도 대기 중이 없으면 큐에 추가만 함
+            waitingQueue.offer(requester);
+            return null;
+        }
+    }
+
+    public synchronized void cancelWaiting(ClientSession session) {
+        waitingQueue.remove(session);
     }
 }

@@ -36,28 +36,26 @@ public class ChatBubble extends JPanel {
     }
 
     public static String insertSoftBreaks(String text, int threshold) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder result = new StringBuilder();
+
         for (String word : text.split(" ")) {
-            if (word.length() > threshold) {
-                for (int i = 0; i < word.length(); i++) {
-                    sb.append(word.charAt(i));
-                    if ((i + 1) % threshold == 0) {
-                        sb.append("<wbr>"); // soft wrap
-                    }
-                }
+            // 한글 포함 여부
+            if (word.matches(".*[가-힣].*") || word.length() <= threshold) {
+                result.append(word);
             } else {
-                sb.append(word);
+                result.append(word.replaceAll("(.{" + threshold + "})", "$1<wbr>"));
             }
-            sb.append(" ");
+            result.append(" ");
         }
-        return sb.toString().trim();
+
+        return result.toString().trim();
     }
 
     public static String buildStyledHtml(String sender, String message, boolean isMine, boolean isSystem, int width) {
         String prefix = isSystem ? "[System] " : isMine ? "" : sender + " : ";
         String full = prefix + message;
         String align = isSystem ? "center" : "left";
-        String bg = isMine ? "#DFFFD6" : "#FFFFFF";
+        String bg = (isMine && !isSystem) ? "#DFFFD6" : "#DDDDDD";
         String fontStyle = isSystem ? "italic" : "normal";
         String widthStyle = (width > 0) ? "width:" + width + "px;" : "";
 

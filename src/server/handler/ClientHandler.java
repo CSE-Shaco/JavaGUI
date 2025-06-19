@@ -12,6 +12,7 @@ import shared.util.LoggerUtil;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Random;
 
 public class ClientHandler extends Thread {
 
@@ -63,18 +64,21 @@ public class ClientHandler extends Thread {
         String roomId = request.getRoomId();
         String action = request.getAction();
         User user = request.getUser();
+        ChatRoom room;
 
-        // 최초 요청이면 세션 생성 및 방 등록
         if (session == null) {
-            ChatRoom room = chatService.getOrCreateRoom(roomId);
-            session = new ClientSession(this, null); // FileHandler는 나중에 set
+            session = new ClientSession(this, null);
             session.setUser(user);
-            room.addSession(session);
-            LoggerUtil.log(user.getDisplayName() + " joined room " + roomId);
+            if (!request.getAction().equals("start_random") && !request.getAction().equals("cancel_waiting")) {
+                room = chatService.getOrCreateRoom(roomId);
+                room.addSession(session);
+            }
         }
 
-        ChatRoom room = chatService.getRoomById(roomId);
-        if (room == null || session == null) return;
+
+        room = chatService.getRoomById(roomId);
+        if ((room == null || session == null) && !request.getAction().equals("start_random") && !request.getAction().equals("cancel_waiting"))
+            return;
 
         switch (action) {
             case "join" -> {
@@ -85,7 +89,8 @@ public class ClientHandler extends Thread {
             }
             case "sendMessage" -> {
                 String msg = request.getContent();
-                ServerResponse response = new MessageResponse(user.getDisplayName(), roomId, msg, false);
+                String displayName = room.isAnonymous() ? ("unknown#" + String.format("%04d", new Random().nextInt(10000))) : user.getDisplayName();
+                ServerResponse response = new MessageResponse(displayName, roomId, msg, false);
                 room.broadcastMessage(response);
             }
             case "quit" -> {
@@ -94,6 +99,20 @@ public class ClientHandler extends Thread {
                 room.broadcastMessage(response);
                 chatService.removeSession(session);
             }
+            case "start_random" -> {
+                ChatRoom matchedRoom = chatService.startRandomChat(session);
+                if (matchedRoom != null) {
+                    ServerResponse systemMsg = new MessageResponse("", matchedRoom.getRoomId(), "matched", true);
+                    matchedRoom.broadcastMessage(systemMsg);
+                    LoggerUtil.log("Anonymous chat started: " + matchedRoom.getRoomId());
+                }
+            }
+            case "cancel_waiting" -> {
+                chatService.cancelWaiting(session);
+                LoggerUtil.log(user.getDisplayName() + " 대기열에서 취소됨");
+            }
+
+
         }
     }
 

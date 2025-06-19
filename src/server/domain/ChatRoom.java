@@ -9,14 +9,24 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ChatRoom {
 
     private final String roomId;
+    private final boolean anonymous;
     private final Set<ClientSession> sessions = ConcurrentHashMap.newKeySet();
 
     public ChatRoom(String roomId) {
+        this(roomId, false);
+    }
+
+    public ChatRoom(String roomId, boolean anonymous) {
         this.roomId = roomId;
+        this.anonymous = anonymous;
     }
 
     public String getRoomId() {
         return roomId;
+    }
+
+    public boolean isAnonymous() {
+        return anonymous;
     }
 
     public void addSession(ClientSession session) {
@@ -32,14 +42,10 @@ public class ChatRoom {
     }
 
     public ClientSession findSessionByUsername(String username) {
-        return sessions.stream()
-                .filter(session -> session.getUser() != null && session.getUser().getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        return sessions.stream().filter(session -> session.getUser() != null && session.getUser().getUsername().equals(username)).findFirst().orElse(null);
     }
 
     public void broadcastMessage(Object message) {
-
         for (ClientSession session : sessions) {
             System.out.println("broadcast message: " + message);
             if (session.getClientHandler() != null) {
@@ -52,5 +58,9 @@ public class ChatRoom {
         for (ClientSession session : sessions) {
             session.getFileHandler().sendFile(response);
         }
+    }
+
+    public Set<ClientSession> getSessions() {
+        return sessions;
     }
 }

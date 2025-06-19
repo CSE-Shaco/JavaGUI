@@ -68,4 +68,8 @@ public class ClientSession {
             LoggerUtil.error("파일 전송 실패", e);
         }
     }
+
+    public String getUsername() {
+        return user.getUsername();
+    }
 }

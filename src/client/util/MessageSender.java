@@ -24,4 +24,10 @@ public class MessageSender {
         out.writeObject(request);
         out.flush();
     }
+
+    public void sendQuit(User user, String roomId) throws IOException {
+        ClientRequest request = new ClientRequest("quit", "", roomId, user, null);
+        out.writeObject(request);
+        out.flush();
+    }
 }

@@ -15,6 +15,10 @@ public class MessageResponse extends ServerResponse {
         return message;
     }
 
+    public String getRoomId() {
+        return roomId;
+    }
+
     public boolean isSystemMessage() {
         return system;
     }

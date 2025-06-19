@@ -4,12 +4,11 @@ import client.handler.FileReceiverThread;
 import client.handler.MessageReceiverThread;
 import client.util.FileSender;
 import client.util.MessageSender;
-import shared.domain.FileInfo;
 import shared.domain.User;
 import shared.dto.ClientRequest;
 import shared.dto.FileResponse;
 import shared.dto.MessageResponse;
-import shared.dto.ServerResponse;
+import shared.util.LoggerUtil;
 
 import javax.swing.*;
 import java.io.ObjectInputStream;
@@ -73,7 +72,7 @@ public class ChatClient {
 
     public void disconnect() {
         try {
-            ClientRequest quitRequest = new ClientRequest("quit", "__quit__", roomId, user, null);
+            ClientRequest quitRequest = new ClientRequest("quit", "", roomId, user, null);
             sender.sendRequest(quitRequest);
             messageSocket.close();
             fileSocket.close();
@@ -87,5 +86,14 @@ public class ChatClient {
 
     public String getRoomId() {
         return roomId;
+    }
+
+    public void cancelWaiting() {
+        try {
+            ClientRequest request = new ClientRequest("cancel_random", "", roomId, user, null);
+            sender.sendRequest(request);
+        } catch (Exception e) {
+            LoggerUtil.error("랜덤 대기 취소 실패", e);
+        }
     }
 }

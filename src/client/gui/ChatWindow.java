@@ -45,18 +45,28 @@ public class ChatWindow extends JFrame {
         JButton sendButton = new JButton("Send");
         JButton fileButton = new JButton("파일 선택");
 
+// ✅ 나가기 버튼 추가
+        JButton exitButton = new JButton("나가기");
+        exitButton.addActionListener(e -> handleExit());
+
+// 버튼 패널 구성
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.add(exitButton, BorderLayout.WEST);
+        buttonPanel.add(fileButton, BorderLayout.CENTER);
+        buttonPanel.add(sendButton, BorderLayout.EAST);
+
+// 하단 입력 패널
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.add(fileButton, BorderLayout.WEST);
+        bottomPanel.add(buttonPanel, BorderLayout.NORTH);
         bottomPanel.add(inputField, BorderLayout.CENTER);
-        bottomPanel.add(sendButton, BorderLayout.EAST);
         add(bottomPanel, BorderLayout.SOUTH);
+
 
         sendButton.addActionListener(new SendHandler());
         inputField.addActionListener(new SendHandler());
         fileButton.addActionListener(e -> handleFileSelection());
 
-        client = new ChatClient("localhost", 12345, user, roomId, this::appendTextMessage,  // 또는 sender를 msg에 포함하도록 포맷
-                this::handleReceivedFile);
+        client = new ChatClient("localhost", 12345, user, roomId, this::appendTextMessage, this::handleReceivedFile);
 
         setVisible(true);
     }
@@ -74,6 +84,14 @@ public class ChatWindow extends JFrame {
     }
 
     private void appendTextMessage(MessageResponse response) {
+        if (response.isSystemMessage() && response.getMessage().equals("rematch_response")) {
+            SwingUtilities.invokeLater(() -> {
+                dispose();
+                new WaitingWindow(user);
+            });
+            return;
+        }
+
         boolean isMine = !response.isSystemMessage() && response.getSender().equals(user.getDisplayName());
         ChatBubble bubble = new ChatBubble(response, isMine);
 
@@ -170,4 +188,24 @@ public class ChatWindow extends JFrame {
             }
         }
     }
+
+    private void handleExit() {
+        int choice = JOptionPane.showConfirmDialog(this, "채팅방에서 나가시겠습니까?", "나가기", JOptionPane.YES_NO_OPTION);
+        if (choice == JOptionPane.YES_OPTION) {
+            try {
+                client.getSender().sendQuit(user, roomId); // 서버에 quit 전송 (필요 시)
+            } catch (Exception ex) {
+                System.err.println("quit 메시지 전송 실패: " + ex.getMessage());
+            }
+            client.disconnect();
+
+            // ✅ RoomSelection 창 띄우기
+            SwingUtilities.invokeLater(() -> new RoomSelectionWindow(user));
+
+            // ✅ 현재 채팅창 닫기
+            dispose();
+        }
+    }
+
+
 }

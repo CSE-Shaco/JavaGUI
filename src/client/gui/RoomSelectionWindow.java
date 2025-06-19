@@ -13,12 +13,12 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Map;
 
-public class RoomSelectionPage extends JFrame {
+public class RoomSelectionWindow extends JFrame {
 
     private final User user;
     private final JPanel roomListPanel;
 
-    public RoomSelectionPage(User user) {
+    public RoomSelectionWindow(User user) {
         this.user = user;
 
         System.out.println(">>> [RoomeSelectionPage] 생성자 진입");
@@ -50,7 +50,11 @@ public class RoomSelectionPage extends JFrame {
             if (roomId != null && !roomId.trim().isEmpty()) openChatWindow(roomId.trim());
         });
 
-        randomButton.addActionListener(e -> openChatWindow("anonymous-" + System.currentTimeMillis()));
+        randomButton.addActionListener(e -> {
+            new WaitingWindow(user); // ✅ WaitingWindow 띄우기
+            dispose();               // 현재 창 닫기
+        });
+
 
         refreshButton.addActionListener(e -> fetchRoomList());
 
