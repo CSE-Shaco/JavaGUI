@@ -17,7 +17,7 @@ public class ChatBubble extends JPanel {
         boolean isSystem = response.isSystemMessage();
 
         JLabel preLabel = new JLabel(buildStyledHtml(sender, message, isMine, isSystem, 0));
-        int measuredWidth = (int) ((preLabel.getPreferredSize().width - 16) / 1.5);
+        int measuredWidth = preLabel.getPreferredSize().width - 10;
         int finalWidth = Math.min(measuredWidth, baseWidth);
 
         JLabel bubbleLabel = isSystem ? preLabel : new JLabel(buildStyledHtml(sender, message, isMine, false, finalWidth));
@@ -39,23 +39,48 @@ public class ChatBubble extends JPanel {
         StringBuilder result = new StringBuilder();
 
         for (String word : text.split(" ")) {
-            // 한글 포함 여부
-            if (word.matches(".*[가-힣].*") || word.length() <= threshold) {
+            if (containsKorean(word) || word.length() <= threshold) {
                 result.append(word);
             } else {
-                result.append(word.replaceAll("(.{" + threshold + "})", "$1<wbr>"));
+                result.append(insertBreaks(word, threshold));
             }
             result.append(" ");
         }
-
+        System.out.println(result);
         return result.toString().trim();
     }
+
+    private static boolean containsKorean(String word) {
+        for (char ch : word.toCharArray()) {
+            if (ch >= 0xAC00 && ch <= 0xD7A3) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String insertBreaks(String word, int threshold) {
+        StringBuilder broken = new StringBuilder();
+        int count = 0;
+
+        for (char ch : word.toCharArray()) {
+            broken.append(ch);
+            count++;
+            if (count == threshold) {
+                broken.append("<wbr>");
+                count = 0;
+            }
+        }
+
+        return broken.toString();
+    }
+
 
     public static String buildStyledHtml(String sender, String message, boolean isMine, boolean isSystem, int width) {
         String prefix = isSystem ? "[System] " : isMine ? "" : sender + " : ";
         String full = prefix + message;
         String align = isSystem ? "center" : "left";
-        String bg = (isMine && !isSystem) ? "#DFFFD6" : "#DDDDDD";
+        String bg = isMine ? "#DFFFD6" : !isSystem ? "#DDDDDD" : "#FFFFFF";
         String fontStyle = isSystem ? "italic" : "normal";
         String widthStyle = (width > 0) ? "width:" + width + "px;" : "";
 

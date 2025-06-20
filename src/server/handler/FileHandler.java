@@ -54,7 +54,7 @@ public class FileHandler extends Thread {
                             return;
                         }
 
-                        ClientSession foundSession = room.findSessionByUsername(user.getUsername());
+                        ClientSession foundSession = room.findSessionByUsername(user.getUserId());
                         if (foundSession == null) {
                             LoggerUtil.error("FileHandler: 해당 사용자의 세션을 찾을 수 없음", new Exception("논리적 예외"));
                             return;
@@ -63,7 +63,7 @@ public class FileHandler extends Thread {
                         this.session = foundSession;
                         this.session.setFileHandler(this);
                         this.session.setFileOutputStream(out);
-                        LoggerUtil.log("FileHandler 연결 완료: " + user.getUsername());
+                        LoggerUtil.log("FileHandler 연결 완료: " + user.getUserId());
                     }
 
                     case "sendFile" -> {
@@ -76,7 +76,7 @@ public class FileHandler extends Thread {
                         ChatRoom room = chatService.getRoomById(roomId);
                         if (room == null) return;
 
-                        FileResponse response = new FileResponse(user.getDisplayName(), roomId, fileInfo);
+                        FileResponse response = new FileResponse(user.getUserId(), user.getUsername(), roomId, fileInfo);
 
                         room.broadcastFile(response);
                         LoggerUtil.log("파일 수신 및 브로드캐스트 완료: " + fileInfo.getFileName());

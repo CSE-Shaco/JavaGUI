@@ -50,7 +50,7 @@ public class ChatClient {
             fileReceiverThread.start();
 
             // 초기 입장 및 파일 핸들러 초기화 요청
-            ClientRequest joinRequest = new ClientRequest("join", user.getDisplayName() + "님이 입장하셨습니다.", roomId, user, null);
+            ClientRequest joinRequest = new ClientRequest("join", user.getUsername() + "님이 입장하셨습니다.", roomId, user, null);
             sender.sendRequest(joinRequest);
             Thread.sleep(100);
             ClientRequest fileInitRequest = new ClientRequest("fileInit", "", roomId, user, null);

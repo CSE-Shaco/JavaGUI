@@ -1,31 +1,27 @@
 package shared.domain;
 
-import java.io.Serial;
 import java.io.Serializable;
 
 public class User implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
-
+    private final String userId;
     private final String username;
-    private final String displayName;
 
-    public User(String username, String displayName) {
+    public User(String userId, String username) {
+        this.userId = userId;
         this.username = username;
-        this.displayName = displayName;
+    }
+
+    public String getUserId() {
+        return userId;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
-
     @Override
     public String toString() {
-        return "User{" + "username='" + username + '\'' + ", displayName='" + displayName + '\'' + '}';
+        return "User{" + "userId='" + userId + '\'' + ", username='" + username + '\'' + '}';
     }
 }

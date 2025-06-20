@@ -70,6 +70,6 @@ public class ClientSession {
     }
 
     public String getUsername() {
-        return user.getUsername();
+        return user.getUserId();
     }
 }

@@ -2,7 +2,6 @@ package server.service;
 
 import server.domain.ChatRoom;
 import server.session.ClientSession;
-import shared.dto.MessageResponse;
 
 import java.util.Map;
 import java.util.Queue;
@@ -27,18 +26,6 @@ public class ChatService {
         for (ChatRoom room : roomMap.values()) {
             if (room.getSessions().contains(session)) {
                 room.removeSession(session);
-
-                if (room.isAnonymous() && room.getParticipantCount() == 1) {
-                    ClientSession survivor = room.getSessions().iterator().next();
-                    MessageResponse response = new MessageResponse("", session.getChatRoom().getRoomId(), "rematch_response", true);
-                    room.broadcastMessage(response);
-                    room.removeSession(survivor);
-                    roomMap.remove(room.getRoomId());
-
-                    return;
-                }
-
-                // 일반 방에서 모두 나간 경우 삭제
                 if (room.getParticipantCount() == 0) {
                     roomMap.remove(room.getRoomId());
                 }

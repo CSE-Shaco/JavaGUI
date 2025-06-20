@@ -28,7 +28,7 @@ public class ChatWindow extends JFrame {
         this.user = user;
         this.roomId = roomId;
 
-        setTitle("Chat - " + user.getDisplayName());
+        setTitle("Chat - " + roomId);
         setSize(500, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -84,15 +84,7 @@ public class ChatWindow extends JFrame {
     }
 
     private void appendTextMessage(MessageResponse response) {
-        if (response.isSystemMessage() && response.getMessage().equals("rematch_response")) {
-            SwingUtilities.invokeLater(() -> {
-                dispose();
-                new WaitingWindow(user);
-            });
-            return;
-        }
-
-        boolean isMine = !response.isSystemMessage() && response.getSender().equals(user.getDisplayName());
+        boolean isMine = !response.isSystemMessage() && response.getSenderId().equals(user.getUserId());
         ChatBubble bubble = new ChatBubble(response, isMine);
 
         chatPanel.add(bubble);
@@ -102,12 +94,30 @@ public class ChatWindow extends JFrame {
     }
 
     public void handleReceivedFile(FileResponse response) {
+        boolean isMine = response.getSenderId().equals(user.getUserId());
+        String username = isMine ? "" : (response.getSender() + " :");
         FileInfo fileInfo = response.getFileInfo();
+
+        JPanel wrapper = new JPanel(new FlowLayout(isMine ? FlowLayout.RIGHT : FlowLayout.LEFT));
+        wrapper.setBackground(Color.WHITE);
+
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BorderLayout());
+        contentPanel.setBackground(isMine ? new Color(220, 248, 198) : new Color(240, 240, 240));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+        // ✅ 유저 이름을 상단에 추가
+        if (!isMine) {
+            JLabel nameLabel = new JLabel(username);
+            nameLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+            nameLabel.setForeground(Color.GRAY);
+            contentPanel.add(nameLabel, BorderLayout.NORTH);
+        }
+
         if (fileInfo.isImage()) {
             ImageIcon icon = new ImageIcon(fileInfo.getData());
             Image scaled = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
             JLabel imgLabel = new JLabel(new ImageIcon(scaled));
-            imgLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             imgLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             imgLabel.addMouseListener(new java.awt.event.MouseAdapter() {
                 public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -117,19 +127,28 @@ public class ChatWindow extends JFrame {
                     JOptionPane.showMessageDialog(ChatWindow.this, scroll, "\uD83D\uDCF7 이미지: " + fileInfo.getFileName(), JOptionPane.PLAIN_MESSAGE);
                 }
             });
-            chatPanel.add(imgLabel);
+            contentPanel.add(imgLabel, BorderLayout.CENTER);
         } else {
-            JPanel row = new JPanel(new BorderLayout());
-            row.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-            row.add(new JLabel("\uD83D\uDCC1 " + fileInfo.getFileName()), BorderLayout.CENTER);
+            JLabel fileLabel = new JLabel("\uD83D\uDCC1 " + fileInfo.getFileName());
             JButton saveBtn = getSaveBtn(fileInfo);
-            row.add(saveBtn, BorderLayout.EAST);
-            chatPanel.add(row);
+
+            JPanel fileRow = new JPanel(new BorderLayout());
+            fileRow.setOpaque(false);
+            fileRow.add(fileLabel, BorderLayout.CENTER);
+            fileRow.add(saveBtn, BorderLayout.EAST);
+
+            contentPanel.add(fileRow, BorderLayout.CENTER);
         }
+
+        wrapper.add(contentPanel);
+        chatPanel.add(wrapper);
+
         chatPanel.revalidate();
         chatPanel.repaint();
         scrollToBottom();
     }
+
+
 
     private JButton getSaveBtn(FileInfo fileInfo) {
         JButton saveBtn = new JButton("\uD83D\uDCE5 저장");

@@ -37,12 +37,16 @@ public class ChatRoom {
         sessions.remove(session);
     }
 
+    public void removeSessionByUsername(String username) {
+        sessions.removeIf(session -> session.getUsername().equals(username));
+    }
+
     public int getParticipantCount() {
         return sessions.size();
     }
 
     public ClientSession findSessionByUsername(String username) {
-        return sessions.stream().filter(session -> session.getUser() != null && session.getUser().getUsername().equals(username)).findFirst().orElse(null);
+        return sessions.stream().filter(session -> session.getUser() != null && session.getUser().getUserId().equals(username)).findFirst().orElse(null);
     }
 
     public void broadcastMessage(Object message) {

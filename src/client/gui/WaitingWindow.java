@@ -3,7 +3,6 @@ package client.gui;
 import shared.domain.User;
 import shared.dto.ClientRequest;
 import shared.dto.MessageResponse;
-import shared.dto.ServerResponse;
 
 import javax.swing.*;
 import java.awt.*;
@@ -46,7 +45,7 @@ public class WaitingWindow extends JFrame {
                 out = new ObjectOutputStream(socket.getOutputStream());
                 in = new ObjectInputStream(socket.getInputStream());
 
-                ClientRequest req = new ClientRequest("start_random" ,"", "", user, null);
+                ClientRequest req = new ClientRequest("start_random", "", "", user, null);
                 out.writeObject(req);
                 out.flush();
 
@@ -72,7 +71,7 @@ public class WaitingWindow extends JFrame {
 
     private void cancelWaiting() {
         try {
-            ClientRequest request = new ClientRequest("cancel_waiting", "" , "", user, null);
+            ClientRequest request = new ClientRequest("cancel_waiting", "", "", user, null);
             out.writeObject(request);
             out.flush();
         } catch (Exception ignored) {

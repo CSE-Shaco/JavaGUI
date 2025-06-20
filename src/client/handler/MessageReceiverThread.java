@@ -1,8 +1,6 @@
 package client.handler;
 
-import server.Server;
 import shared.dto.MessageResponse;
-import shared.dto.ServerResponse;
 import shared.util.LoggerUtil;
 
 import java.io.ObjectInputStream;

@@ -6,8 +6,8 @@ public class FileResponse extends ServerResponse {
 
     private final FileInfo fileInfo;
 
-    public FileResponse(String sender, String roomId , FileInfo fileInfo) {
-        super(sender, roomId);
+    public FileResponse(String senderId, String sender, String roomId, FileInfo fileInfo) {
+        super(senderId, sender, roomId);
         this.fileInfo = fileInfo;
     }
 
