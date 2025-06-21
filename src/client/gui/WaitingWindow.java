@@ -65,7 +65,6 @@ public class WaitingWindow extends JFrame {
                         }
                     }
                 }
-
             } catch (Exception e) {
                 SwingUtilities.invokeLater(() ->
                         JOptionPane.showMessageDialog(this, "Connection to server failed.")

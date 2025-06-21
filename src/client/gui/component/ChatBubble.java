@@ -111,11 +111,11 @@ public class ChatBubble extends JPanel {
     /**
      * Constructs styled HTML for the chat bubble with inline CSS.
      *
-     * @param sender     Sender's name
-     * @param message    Message content
-     * @param isMine     Whether it's sent by the current user
-     * @param isSystem   Whether it's a system message
-     * @param width      Max width (0 for auto)
+     * @param sender   Sender's name
+     * @param message  Message content
+     * @param isMine   Whether it's sent by the current user
+     * @param isSystem Whether it's a system message
+     * @param width    Max width (0 for auto)
      * @return HTML string to use in JLabel
      */
     public static String buildStyledHtml(String sender, String message, boolean isMine, boolean isSystem, int width) {

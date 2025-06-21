@@ -1,6 +1,5 @@
 package server.session;
 
-import server.domain.ChatRoom;
 import server.handler.ClientHandler;
 import server.handler.FileHandler;
 import shared.domain.User;

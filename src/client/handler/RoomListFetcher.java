@@ -30,7 +30,6 @@ public class RoomListFetcher extends Thread {
             if (obj instanceof RoomListResponse response) {
                 callback.accept(response.getRooms());  // Received Map<String, Integer>
             }
-
         } catch (Exception e) {
             System.err.println("Failed to receive room list: " + e.getMessage());
         }

@@ -104,7 +104,7 @@ public class RoomSelectionWindow extends JFrame {
     /**
      * Creates a panel for a single room entry.
      *
-     * @param roomId Room name
+     * @param roomId           Room name
      * @param participantCount Number of current participants
      * @return JPanel representing the room
      */

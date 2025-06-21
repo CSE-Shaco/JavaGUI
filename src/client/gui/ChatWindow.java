@@ -121,7 +121,7 @@ public class ChatWindow extends JFrame {
                 public void mouseClicked(java.awt.event.MouseEvent evt) {
                     JLabel bigImage = new JLabel(icon);
                     JScrollPane scroll = new JScrollPane(bigImage);
-                    scroll.setPreferredSize(new Dimension(icon.getIconWidth(),icon.getIconHeight()));
+                    scroll.setPreferredSize(new Dimension(icon.getIconWidth(), icon.getIconHeight()));
 
                     Object[] options = {"OK", "Save"};
                     int result = JOptionPane.showOptionDialog(ChatWindow.this, scroll, "Image Preview: " + fileInfo.getFileName(), JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
@@ -186,7 +186,23 @@ public class ChatWindow extends JFrame {
         });
     }
 
+    private void handleExit() {
+        int choice = JOptionPane.showConfirmDialog(this, "Do you want to leave this chat room?", "Exit", JOptionPane.YES_NO_OPTION);
+        if (choice == JOptionPane.YES_OPTION) {
+            try {
+                client.getSender().sendQuit(user, roomId);
+            } catch (Exception ex) {
+                System.err.println("Failed to send quit message: " + ex.getMessage());
+            }
+            client.disconnect();
+
+            SwingUtilities.invokeLater(() -> new RoomSelectionWindow(user));
+            dispose();
+        }
+    }
+
     private class SendHandler implements ActionListener {
+
         @Override
         public void actionPerformed(ActionEvent e) {
             if (selectedFile != null) {
@@ -216,21 +232,6 @@ public class ChatWindow extends JFrame {
                     }
                 }
             }
-        }
-    }
-
-    private void handleExit() {
-        int choice = JOptionPane.showConfirmDialog(this, "Do you want to leave this chat room?", "Exit", JOptionPane.YES_NO_OPTION);
-        if (choice == JOptionPane.YES_OPTION) {
-            try {
-                client.getSender().sendQuit(user, roomId);
-            } catch (Exception ex) {
-                System.err.println("Failed to send quit message: " + ex.getMessage());
-            }
-            client.disconnect();
-
-            SwingUtilities.invokeLater(() -> new RoomSelectionWindow(user));
-            dispose();
         }
     }
 }

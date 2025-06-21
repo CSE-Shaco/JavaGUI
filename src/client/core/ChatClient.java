@@ -32,12 +32,12 @@ public class ChatClient {
     /**
      * Initializes the ChatClient by connecting to server and starting I/O threads.
      *
-     * @param host             Server host
-     * @param msgPort          Base port (message port)
-     * @param user             User info
-     * @param roomId           Room ID to join
-     * @param messageConsumer  Callback for received messages
-     * @param fileConsumer     Callback for received files
+     * @param host            Server host
+     * @param msgPort         Base port (message port)
+     * @param user            User info
+     * @param roomId          Room ID to join
+     * @param messageConsumer Callback for received messages
+     * @param fileConsumer    Callback for received files
      */
     public ChatClient(String host, int msgPort, User user, String roomId,
                       Consumer<MessageResponse> messageConsumer,
@@ -85,7 +85,6 @@ public class ChatClient {
             // Request to initialize file handler on server
             ClientRequest fileInitRequest = new ClientRequest("fileInit", "", roomId, user, null);
             fileSender.sendRequest(fileInitRequest);
-
         } catch (Exception e) {
             // Show connection failure message and propagate exception
             JOptionPane.showMessageDialog(null, "Failed to connect to server: " + e.getMessage());

@@ -84,7 +84,8 @@ public class FileHandler extends Thread {
                         LoggerUtil.log("File received and broadcasted: " + fileInfo.getFileName());
                     }
 
-                    default -> LoggerUtil.error("FileHandler: Unsupported action - " + action, new Exception("Unknown action"));
+                    default ->
+                            LoggerUtil.error("FileHandler: Unsupported action - " + action, new Exception("Unknown action"));
                 }
             }
         } catch (Exception e) {
