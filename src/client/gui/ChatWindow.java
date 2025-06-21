@@ -74,8 +74,7 @@ public class ChatWindow extends JFrame {
     private void handleFileSelection() {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Select a file to send");
-        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-
+        chooser.setAcceptAllFileFilterUsed(true);
         int result = chooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             selectedFile = chooser.getSelectedFile();
