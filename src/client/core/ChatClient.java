@@ -8,7 +8,6 @@ import shared.domain.User;
 import shared.dto.ClientRequest;
 import shared.dto.FileResponse;
 import shared.dto.MessageResponse;
-import shared.util.LoggerUtil;
 
 import javax.swing.*;
 import java.io.ObjectInputStream;
@@ -39,9 +38,7 @@ public class ChatClient {
      * @param messageConsumer Callback for received messages
      * @param fileConsumer    Callback for received files
      */
-    public ChatClient(String host, int msgPort, User user, String roomId,
-                      Consumer<MessageResponse> messageConsumer,
-                      Consumer<FileResponse> fileConsumer) {
+    public ChatClient(String host, int msgPort, User user, String roomId, Consumer<MessageResponse> messageConsumer, Consumer<FileResponse> fileConsumer) {
         this.user = user;
         this.roomId = roomId;
         try {
@@ -70,13 +67,7 @@ public class ChatClient {
             fileReceiverThread.start();
 
             // Send initial join request to server
-            ClientRequest joinRequest = new ClientRequest(
-                    "join",
-                    user.getUsername() + " has joined the chat.",
-                    roomId,
-                    user,
-                    null
-            );
+            ClientRequest joinRequest = new ClientRequest("join", user.getUsername() + " has joined the chat.", roomId, user, null);
             sender.sendRequest(joinRequest);
 
             // Sleep briefly to ensure join is processed before file init
@@ -111,26 +102,6 @@ public class ChatClient {
             fileSocket.close();
         } catch (Exception ignored) {
             // Ignore disconnection exceptions silently
-        }
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public String getRoomId() {
-        return roomId;
-    }
-
-    /**
-     * Cancels waiting status for random chat matching.
-     */
-    public void cancelWaiting() {
-        try {
-            ClientRequest request = new ClientRequest("cancel_random", "", roomId, user, null);
-            sender.sendRequest(request);
-        } catch (Exception e) {
-            LoggerUtil.error("Failed to cancel random matching request", e);
         }
     }
 }

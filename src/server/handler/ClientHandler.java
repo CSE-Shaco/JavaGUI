@@ -30,14 +30,6 @@ public class ClientHandler extends Thread {
         this.chatService = chatService;
     }
 
-    public ClientSession getSession() {
-        return session;
-    }
-
-    public void setSession(ClientSession session) {
-        this.session = session;
-    }
-
     @Override
     public void run() {
         try {
