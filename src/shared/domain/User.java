@@ -2,6 +2,10 @@ package shared.domain;
 
 import java.io.Serializable;
 
+/**
+ * Represents a user in the chat system.
+ * Contains both internal userId and public-facing username.
+ */
 public class User implements Serializable {
 
     private final String userId;
@@ -22,6 +26,9 @@ public class User implements Serializable {
 
     @Override
     public String toString() {
-        return "User{" + "userId='" + userId + '\'' + ", username='" + username + '\'' + '}';
+        return "User{" +
+                "userId='" + userId + '\'' +
+                ", username='" + username + '\'' +
+                '}';
     }
 }

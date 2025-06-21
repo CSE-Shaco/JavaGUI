@@ -10,7 +10,9 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Map;
 
-// 별도의 RoomListHandler 생성 (한 번 받고 응답하고 종료)
+/**
+ * One-time handler that processes a room list request and returns the response.
+ */
 public class RoomListHandler extends Thread {
 
     private final Socket socket;
@@ -23,7 +25,10 @@ public class RoomListHandler extends Thread {
 
     @Override
     public void run() {
-        try (ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream()); ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
+        try (
+                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+                ObjectInputStream in = new ObjectInputStream(socket.getInputStream())
+        ) {
             Object obj = in.readObject();
             if (obj instanceof RoomListRequest) {
                 Map<String, Integer> roomMap = chatService.getRoomList();
@@ -31,7 +36,7 @@ public class RoomListHandler extends Thread {
                 out.flush();
             }
         } catch (Exception e) {
-            LoggerUtil.error("RoomListHandler 예외", e);
+            LoggerUtil.error("RoomListHandler exception", e);
         } finally {
             try {
                 socket.close();

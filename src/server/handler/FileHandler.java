@@ -14,6 +14,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+/**
+ * Handles incoming file-related requests from a client in a separate thread.
+ */
 public class FileHandler extends Thread {
 
     private final Socket socket;
@@ -38,7 +41,7 @@ public class FileHandler extends Thread {
             while (true) {
                 Object obj = in.readObject();
                 if (!(obj instanceof ClientRequest request)) {
-                    LoggerUtil.error("FileHandler: 잘못된 요청 수신", new Exception("유효하지 않은 객체"));
+                    LoggerUtil.error("FileHandler: Invalid request received", new Exception("Invalid object type"));
                     continue;
                 }
 
@@ -50,26 +53,26 @@ public class FileHandler extends Thread {
                     case "fileInit" -> {
                         ChatRoom room = chatService.getRoomById(roomId);
                         if (room == null) {
-                            LoggerUtil.error("FileHandler: 존재하지 않는 방 " + roomId, new Exception("논리적 예외"));
+                            LoggerUtil.error("FileHandler: Room not found - " + roomId, new Exception("Logical error"));
                             return;
                         }
 
                         ClientSession foundSession = room.findSessionByUsername(user.getUserId());
                         if (foundSession == null) {
-                            LoggerUtil.error("FileHandler: 해당 사용자의 세션을 찾을 수 없음", new Exception("논리적 예외"));
+                            LoggerUtil.error("FileHandler: Session not found for user", new Exception("Logical error"));
                             return;
                         }
 
                         this.session = foundSession;
                         this.session.setFileHandler(this);
                         this.session.setFileOutputStream(out);
-                        LoggerUtil.log("FileHandler 연결 완료: " + user.getUserId());
+                        LoggerUtil.log("FileHandler connected: " + user.getUserId());
                     }
 
                     case "sendFile" -> {
                         FileInfo fileInfo = request.getFileInfo();
                         if (session == null) {
-                            LoggerUtil.error("FileHandler: 초기화되지 않은 세션에서 파일 전송 시도", new Exception("초기화 필요"));
+                            LoggerUtil.error("FileHandler: File sent before session was initialized", new Exception("Session not initialized"));
                             return;
                         }
 
@@ -77,24 +80,26 @@ public class FileHandler extends Thread {
                         if (room == null) return;
 
                         FileResponse response = new FileResponse(user.getUserId(), user.getUsername(), roomId, fileInfo);
-
                         room.broadcastFile(response);
-                        LoggerUtil.log("파일 수신 및 브로드캐스트 완료: " + fileInfo.getFileName());
+                        LoggerUtil.log("File received and broadcasted: " + fileInfo.getFileName());
                     }
 
-                    default -> LoggerUtil.error("FileHandler: 지원하지 않는 액션: " + action, new Exception("알 수 없는 액션"));
+                    default -> LoggerUtil.error("FileHandler: Unsupported action - " + action, new Exception("Unknown action"));
                 }
             }
         } catch (Exception e) {
-            LoggerUtil.error("파일 처리 실패", e);
+            LoggerUtil.error("FileHandler: Failed to process file request", e);
         }
     }
 
+    /**
+     * Sends a file response back to the client session.
+     */
     public void sendFile(ServerResponse response) {
         try {
             session.sendFile(response);
         } catch (Exception e) {
-            LoggerUtil.error("파일 전송 실패", e);
+            LoggerUtil.error("FileHandler: Failed to send file", e);
         }
     }
 }

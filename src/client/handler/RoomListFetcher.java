@@ -7,6 +7,9 @@ import java.net.Socket;
 import java.util.Map;
 import java.util.function.Consumer;
 
+/**
+ * Thread that fetches the room list from the server.
+ */
 public class RoomListFetcher extends Thread {
 
     private final Socket socket;
@@ -25,11 +28,11 @@ public class RoomListFetcher extends Thread {
 
             Object obj = in.readObject();
             if (obj instanceof RoomListResponse response) {
-                callback.accept(response.getRooms());  // Map<String, Integer> 형태
+                callback.accept(response.getRooms());  // Received Map<String, Integer>
             }
 
         } catch (Exception e) {
-            System.err.println("Room list 수신 실패: " + e.getMessage());
+            System.err.println("Failed to receive room list: " + e.getMessage());
         }
     }
 }

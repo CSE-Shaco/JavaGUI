@@ -9,19 +9,31 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
+/**
+ * Service class managing chat rooms and random chat matching.
+ */
 public class ChatService {
 
     private final Map<String, ChatRoom> roomMap = new ConcurrentHashMap<>();
     private final Queue<ClientSession> waitingQueue = new LinkedBlockingQueue<>();
 
+    /**
+     * Returns an existing room or creates one if not found.
+     */
     public ChatRoom getOrCreateRoom(String roomId) {
         return roomMap.computeIfAbsent(roomId, ChatRoom::new);
     }
 
+    /**
+     * Returns a room by its ID, or null if not found.
+     */
     public ChatRoom getRoomById(String roomId) {
         return roomMap.get(roomId);
     }
 
+    /**
+     * Removes the session from any room it belongs to, and deletes empty rooms.
+     */
     public void removeSession(ClientSession session) {
         for (ChatRoom room : roomMap.values()) {
             if (room.getSessions().contains(session)) {
@@ -34,21 +46,30 @@ public class ChatService {
         }
     }
 
+    /**
+     * Returns a map of non-anonymous room IDs to participant counts.
+     */
     public Map<String, Integer> getRoomList() {
-        return roomMap.entrySet().stream().filter(entry -> !entry.getValue().isAnonymous()) // 익명 방 제외
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getParticipantCount()));
+        return roomMap.entrySet().stream()
+                .filter(entry -> !entry.getValue().isAnonymous()) // exclude anonymous rooms
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().getParticipantCount()
+                ));
     }
 
-
+    /**
+     * Starts a random chat if a match is found; otherwise, adds to waiting queue.
+     */
     public synchronized ChatRoom startRandomChat(ClientSession requester) {
         if (waitingQueue.contains(requester)) {
-            return null; // 이미 대기 중이면 아무것도 안 함
+            return null; // do nothing if already waiting
         }
 
         if (!waitingQueue.isEmpty()) {
             ClientSession partner = waitingQueue.poll();
 
-            // 이 시점에서 방 생성
+            // create a new room at this point
             String roomId = "anonymous-" + System.currentTimeMillis();
             ChatRoom room = new ChatRoom(roomId, true);
             room.addSession(partner);
@@ -57,12 +78,15 @@ public class ChatService {
 
             return room;
         } else {
-            // 아무도 대기 중이 없으면 큐에 추가만 함
+            // no one is waiting, so add to queue
             waitingQueue.offer(requester);
             return null;
         }
     }
 
+    /**
+     * Removes a session from the random chat waiting queue.
+     */
     public synchronized void cancelWaiting(ClientSession session) {
         waitingQueue.remove(session);
     }

@@ -9,13 +9,16 @@ import shared.util.LoggerUtil;
 
 import java.io.ObjectOutputStream;
 
+/**
+ * Represents a session between a client and the server.
+ * Holds reference to user, handlers, and output stream for file transfers.
+ */
 public class ClientSession {
 
     private final ClientHandler clientHandler;
     private final Object fileLock = new Object();
     private FileHandler fileHandler;
     private User user;
-    private ChatRoom chatRoom; // ✅ 추가
     private ObjectOutputStream fileOut;
 
     public ClientSession(ClientHandler clientHandler, FileHandler fileHandler) {
@@ -46,18 +49,13 @@ public class ClientSession {
         }
     }
 
-    public ChatRoom getChatRoom() {
-        return chatRoom;
-    }
-
-    public void setChatRoom(ChatRoom chatRoom) {
-        this.chatRoom = chatRoom;
-    }
-
     public void setFileOutputStream(ObjectOutputStream out) {
         this.fileOut = out;
     }
 
+    /**
+     * Sends a file-related server response through the output stream.
+     */
     public void sendFile(ServerResponse response) {
         try {
             synchronized (fileLock) {
@@ -65,7 +63,7 @@ public class ClientSession {
                 fileOut.flush();
             }
         } catch (Exception e) {
-            LoggerUtil.error("파일 전송 실패", e);
+            LoggerUtil.error("Failed to send file", e);
         }
     }
 

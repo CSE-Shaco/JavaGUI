@@ -5,6 +5,9 @@ import shared.dto.FileResponse;
 import java.io.ObjectInputStream;
 import java.util.function.Consumer;
 
+/**
+ * Thread for receiving file messages from the server.
+ */
 public class FileReceiverThread extends Thread {
 
     private final ObjectInputStream in;
@@ -26,7 +29,7 @@ public class FileReceiverThread extends Thread {
                 }
             }
         } catch (Exception e) {
-            System.err.println("파일 수신 오류: " + e.getMessage());
+            System.err.println("File receiving error: " + e.getMessage());
         }
     }
 }

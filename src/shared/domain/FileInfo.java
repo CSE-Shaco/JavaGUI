@@ -2,7 +2,12 @@ package shared.domain;
 
 import java.io.Serializable;
 
+/**
+ * Represents a file being transferred between client and server.
+ * Includes the file name, binary data, and whether it is an image.
+ */
 public class FileInfo implements Serializable {
+
     private final String fileName;
     private final byte[] data;
     private final boolean isImage;

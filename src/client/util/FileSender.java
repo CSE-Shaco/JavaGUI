@@ -7,6 +7,9 @@ import shared.dto.ClientRequest;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
+/**
+ * Utility class for sending file-related requests to the server.
+ */
 public class FileSender {
 
     private final ObjectOutputStream out;
@@ -15,11 +18,17 @@ public class FileSender {
         this.out = out;
     }
 
+    /**
+     * Sends a file along with user and room information.
+     */
     public void sendFile(FileInfo fileInfo, User user, String roomId) {
         ClientRequest request = new ClientRequest("sendFile", "", roomId, user, fileInfo);
         sendRequest(request);
     }
 
+    /**
+     * Sends a generic client request using the output stream.
+     */
     public void sendRequest(ClientRequest request) {
         new Thread(() -> {
             try {
@@ -28,7 +37,7 @@ public class FileSender {
                     out.flush();
                 }
             } catch (IOException e) {
-                System.err.println("파일 전송 실패: " + e.getMessage());
+                System.err.println("Failed to send file: " + e.getMessage());
             }
         }).start();
     }

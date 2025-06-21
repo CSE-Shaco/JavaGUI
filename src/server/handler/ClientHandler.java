@@ -13,6 +13,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+/**
+ * Handles a connected client and routes requests to ChatService.
+ */
 public class ClientHandler extends Thread {
 
     private final Socket socket;
@@ -38,7 +41,7 @@ public class ClientHandler extends Thread {
     @Override
     public void run() {
         try {
-            // 반드시 ObjectOutputStream 먼저 생성
+            // Always initialize ObjectOutputStream before ObjectInputStream
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
             LoggerUtil.log("Client connected: " + socket);
@@ -46,14 +49,14 @@ public class ClientHandler extends Thread {
             while (true) {
                 Object obj = in.readObject();
 
-                // 일반 클라이언트 요청
+                // Process client request
                 if (obj instanceof ClientRequest request) {
                     handleClientRequest(request);
-                    System.out.println("Client request Sent");
+                    System.out.println("Client request received");
                 }
             }
         } catch (Exception e) {
-            LoggerUtil.error("Connection Lost", e);
+            LoggerUtil.error("Connection lost", e);
         } finally {
             cleanup();
         }
@@ -68,7 +71,7 @@ public class ClientHandler extends Thread {
         if (session == null) {
             session = new ClientSession(this, null);
             session.setUser(user);
-            if (!request.getAction().equals("start_random") && !request.getAction().equals("cancel_waiting")) {
+            if (!action.equals("start_random") && !action.equals("cancel_waiting")) {
                 room = chatService.getOrCreateRoom(roomId);
                 if (room.findSessionByUsername(user.getUserId()) != null) {
                     room.removeSessionByUsername(user.getUserId());
@@ -77,14 +80,15 @@ public class ClientHandler extends Thread {
             }
         }
 
-
         room = chatService.getRoomById(roomId);
-        if ((room == null || session == null) && !request.getAction().equals("start_random") && !request.getAction().equals("cancel_waiting"))
+        if ((room == null || session == null) && !action.equals("start_random") && !action.equals("cancel_waiting"))
             return;
 
         switch (action) {
             case "join" -> {
-                String msg = room.isAnonymous() ? "유저가 매칭되었습니다." : (user.getUsername() + "님이 입장하셨습니다.");
+                String msg = room.isAnonymous()
+                        ? "A user has joined the anonymous chat."
+                        : user.getUsername() + " has entered the room.";
                 System.out.println(msg);
                 ServerResponse response = new MessageResponse("", "", roomId, msg, true);
                 room.broadcastMessage(response);
@@ -96,7 +100,7 @@ public class ClientHandler extends Thread {
                 room.broadcastMessage(response);
             }
             case "quit" -> {
-                String msg = user.getUsername() + "님이 퇴장하셨습니다.";
+                String msg = user.getUsername() + " has left the room.";
                 ServerResponse response = new MessageResponse("", "", roomId, msg, true);
                 room.broadcastMessage(response);
                 chatService.removeSession(session);
@@ -111,10 +115,8 @@ public class ClientHandler extends Thread {
             }
             case "cancel_waiting" -> {
                 chatService.cancelWaiting(session);
-                LoggerUtil.log(user.getUsername() + " 대기열에서 취소됨");
+                LoggerUtil.log(user.getUsername() + " cancelled from waiting queue.");
             }
-
-
         }
     }
 
@@ -125,7 +127,7 @@ public class ClientHandler extends Thread {
                 out.flush();
             }
         } catch (Exception e) {
-            LoggerUtil.error("메시지 전송 실패", e);
+            LoggerUtil.error("Failed to send message", e);
         }
     }
 

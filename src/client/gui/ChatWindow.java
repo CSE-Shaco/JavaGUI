@@ -14,6 +14,10 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.nio.file.Files;
 
+/**
+ * Main chat window UI.
+ * Handles text messages, file sending/receiving, and user interface events.
+ */
 public class ChatWindow extends JFrame {
 
     private final User user;
@@ -43,24 +47,20 @@ public class ChatWindow extends JFrame {
 
         inputField = new JTextField();
         JButton sendButton = new JButton("Send");
-        JButton fileButton = new JButton("파일 선택");
+        JButton fileButton = new JButton("Select File");
 
-// ✅ 나가기 버튼 추가
-        JButton exitButton = new JButton("나가기");
+        JButton exitButton = new JButton("Exit");
         exitButton.addActionListener(e -> handleExit());
 
-// 버튼 패널 구성
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.add(exitButton, BorderLayout.WEST);
         buttonPanel.add(fileButton, BorderLayout.CENTER);
         buttonPanel.add(sendButton, BorderLayout.EAST);
 
-// 하단 입력 패널
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(buttonPanel, BorderLayout.NORTH);
         bottomPanel.add(inputField, BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
-
 
         sendButton.addActionListener(new SendHandler());
         inputField.addActionListener(new SendHandler());
@@ -73,7 +73,7 @@ public class ChatWindow extends JFrame {
 
     private void handleFileSelection() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("전송할 파일을 선택하세요");
+        chooser.setDialogTitle("Select a file to send");
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
         int result = chooser.showOpenDialog(this);
@@ -95,7 +95,7 @@ public class ChatWindow extends JFrame {
 
     public void handleReceivedFile(FileResponse response) {
         boolean isMine = response.getSenderId().equals(user.getUserId());
-        String username = isMine ? "" : (response.getSender() + " :");
+        String username = isMine ? "" : (response.getSender() + " : ");
         FileInfo fileInfo = response.getFileInfo();
 
         JPanel wrapper = new JPanel(new FlowLayout(isMine ? FlowLayout.RIGHT : FlowLayout.LEFT));
@@ -106,7 +106,6 @@ public class ChatWindow extends JFrame {
         contentPanel.setBackground(isMine ? new Color(220, 248, 198) : new Color(240, 240, 240));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
-        // ✅ 유저 이름을 상단에 추가
         if (!isMine) {
             JLabel nameLabel = new JLabel(username);
             nameLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
@@ -123,13 +122,29 @@ public class ChatWindow extends JFrame {
                 public void mouseClicked(java.awt.event.MouseEvent evt) {
                     JLabel bigImage = new JLabel(icon);
                     JScrollPane scroll = new JScrollPane(bigImage);
-                    scroll.setPreferredSize(new Dimension(400, 400));
-                    JOptionPane.showMessageDialog(ChatWindow.this, scroll, "\uD83D\uDCF7 이미지: " + fileInfo.getFileName(), JOptionPane.PLAIN_MESSAGE);
+                    scroll.setPreferredSize(new Dimension(icon.getIconWidth(),icon.getIconHeight()));
+
+                    Object[] options = {"OK", "Save"};
+                    int result = JOptionPane.showOptionDialog(ChatWindow.this, scroll, "Image Preview: " + fileInfo.getFileName(), JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+
+                    if (result == 1) { // "Save" clicked
+                        JFileChooser fileChooser = new JFileChooser();
+                        fileChooser.setSelectedFile(new java.io.File(fileInfo.getFileName()));
+                        int userSelection = fileChooser.showSaveDialog(ChatWindow.this);
+                        if (userSelection == JFileChooser.APPROVE_OPTION) {
+                            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(fileChooser.getSelectedFile())) {
+                                fos.write(fileInfo.getData());
+                                JOptionPane.showMessageDialog(ChatWindow.this, "File saved successfully.");
+                            } catch (Exception e) {
+                                JOptionPane.showMessageDialog(ChatWindow.this, "Failed to save the file.");
+                            }
+                        }
+                    }
                 }
             });
             contentPanel.add(imgLabel, BorderLayout.CENTER);
         } else {
-            JLabel fileLabel = new JLabel("\uD83D\uDCC1 " + fileInfo.getFileName());
+            JLabel fileLabel = new JLabel("File: " + fileInfo.getFileName());
             JButton saveBtn = getSaveBtn(fileInfo);
 
             JPanel fileRow = new JPanel(new BorderLayout());
@@ -148,19 +163,17 @@ public class ChatWindow extends JFrame {
         scrollToBottom();
     }
 
-
-
     private JButton getSaveBtn(FileInfo fileInfo) {
-        JButton saveBtn = new JButton("\uD83D\uDCE5 저장");
+        JButton saveBtn = new JButton("Save");
         saveBtn.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
             chooser.setSelectedFile(new File(fileInfo.getFileName()));
             if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
                 try {
                     Files.write(chooser.getSelectedFile().toPath(), fileInfo.getData());
-                    JOptionPane.showMessageDialog(this, "파일 저장 완료!");
+                    JOptionPane.showMessageDialog(this, "File saved successfully.");
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "파일 저장 실패: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(this, "Failed to save file: " + ex.getMessage());
                 }
             }
         });
@@ -169,13 +182,12 @@ public class ChatWindow extends JFrame {
 
     private void scrollToBottom() {
         SwingUtilities.invokeLater(() -> {
-            chatPanel.revalidate(); // 새 컴포넌트 레이아웃 갱신
+            chatPanel.revalidate();
             chatScrollPane.getVerticalScrollBar().setValue(chatScrollPane.getVerticalScrollBar().getMaximum());
         });
     }
 
     private class SendHandler implements ActionListener {
-
         @Override
         public void actionPerformed(ActionEvent e) {
             if (selectedFile != null) {
@@ -191,7 +203,7 @@ public class ChatWindow extends JFrame {
                             inputField.setText("");
                         });
                     } catch (Exception ex) {
-                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(ChatWindow.this, "파일 전송 실패: " + ex.getMessage()));
+                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(ChatWindow.this, "Failed to send file: " + ex.getMessage()));
                     }
                 }).start();
             } else {
@@ -201,7 +213,7 @@ public class ChatWindow extends JFrame {
                         client.getSender().sendText(message, user, roomId);
                         inputField.setText("");
                     } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(ChatWindow.this, "메시지 전송 실패: " + ex.getMessage());
+                        JOptionPane.showMessageDialog(ChatWindow.this, "Failed to send message: " + ex.getMessage());
                     }
                 }
             }
@@ -209,22 +221,17 @@ public class ChatWindow extends JFrame {
     }
 
     private void handleExit() {
-        int choice = JOptionPane.showConfirmDialog(this, "채팅방에서 나가시겠습니까?", "나가기", JOptionPane.YES_NO_OPTION);
+        int choice = JOptionPane.showConfirmDialog(this, "Do you want to leave this chat room?", "Exit", JOptionPane.YES_NO_OPTION);
         if (choice == JOptionPane.YES_OPTION) {
             try {
-                client.getSender().sendQuit(user, roomId); // 서버에 quit 전송 (필요 시)
+                client.getSender().sendQuit(user, roomId);
             } catch (Exception ex) {
-                System.err.println("quit 메시지 전송 실패: " + ex.getMessage());
+                System.err.println("Failed to send quit message: " + ex.getMessage());
             }
             client.disconnect();
 
-            // ✅ RoomSelection 창 띄우기
             SwingUtilities.invokeLater(() -> new RoomSelectionWindow(user));
-
-            // ✅ 현재 채팅창 닫기
             dispose();
         }
     }
-
-
 }

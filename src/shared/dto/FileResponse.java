@@ -2,6 +2,9 @@ package shared.dto;
 
 import shared.domain.FileInfo;
 
+/**
+ * Response sent from server to clients when a file is transferred.
+ */
 public class FileResponse extends ServerResponse {
 
     private final FileInfo fileInfo;

@@ -6,6 +6,9 @@ import shared.util.LoggerUtil;
 import java.io.ObjectInputStream;
 import java.util.function.Consumer;
 
+/**
+ * Thread responsible for receiving message responses from the server.
+ */
 public class MessageReceiverThread extends Thread {
 
     private final ObjectInputStream in;
@@ -26,7 +29,7 @@ public class MessageReceiverThread extends Thread {
                 }
             }
         } catch (Exception e) {
-            LoggerUtil.error("서버와의 연결이 종료되었습니다.", e);
+            LoggerUtil.error("Connection to server has been closed.", e);
         }
     }
 }

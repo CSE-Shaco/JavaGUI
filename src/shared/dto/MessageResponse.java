@@ -1,5 +1,9 @@
 package shared.dto;
 
+/**
+ * Response sent from server to clients when a text message is transferred.
+ * Can be a normal user message or a system message.
+ */
 public class MessageResponse extends ServerResponse {
 
     private final String message;
@@ -13,10 +17,6 @@ public class MessageResponse extends ServerResponse {
 
     public String getMessage() {
         return message;
-    }
-
-    public String getRoomId() {
-        return roomId;
     }
 
     public boolean isSystemMessage() {

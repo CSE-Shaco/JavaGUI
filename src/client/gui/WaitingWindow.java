@@ -10,6 +10,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+/**
+ * Waiting window shown during random chat matching.
+ */
 public class WaitingWindow extends JFrame {
 
     private final User user;
@@ -20,28 +23,31 @@ public class WaitingWindow extends JFrame {
     public WaitingWindow(User user) {
         this.user = user;
 
-        setTitle("랜덤 채팅 - 매칭 대기 중");
+        setTitle("Random Chat - Waiting for Match");
         setSize(300, 150);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        JLabel messageLabel = new JLabel("상대를 기다리는 중입니다...", SwingConstants.CENTER);
+        JLabel messageLabel = new JLabel("Waiting for another user...", SwingConstants.CENTER);
         messageLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
         add(messageLabel, BorderLayout.CENTER);
 
-        JButton cancelButton = new JButton("취소");
+        JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(e -> cancelWaiting());
         add(cancelButton, BorderLayout.SOUTH);
 
         setVisible(true);
-        startMatching(); // 매칭 시도 시작
+        startMatching(); // Start attempting to match
     }
 
+    /**
+     * Starts the process of waiting and listening for a match.
+     */
     private void startMatching() {
         new Thread(() -> {
             try {
-                socket = new Socket("localhost", 12345); // 서버 포트
+                socket = new Socket("localhost", 12345);
                 out = new ObjectOutputStream(socket.getOutputStream());
                 in = new ObjectInputStream(socket.getInputStream());
 
@@ -62,13 +68,16 @@ public class WaitingWindow extends JFrame {
 
             } catch (Exception e) {
                 SwingUtilities.invokeLater(() ->
-                        JOptionPane.showMessageDialog(this, "서버와 연결 중 문제가 발생했습니다.")
+                        JOptionPane.showMessageDialog(this, "Connection to server failed.")
                 );
                 dispose();
             }
         }).start();
     }
 
+    /**
+     * Cancels the waiting state and returns to the room selection window.
+     */
     private void cancelWaiting() {
         try {
             ClientRequest request = new ClientRequest("cancel_waiting", "", "", user, null);
@@ -81,6 +90,9 @@ public class WaitingWindow extends JFrame {
         }
     }
 
+    /**
+     * Opens the chat window once a match has been made.
+     */
     private void openChatRoom(String roomId) {
         SwingUtilities.invokeLater(() -> {
             dispose();

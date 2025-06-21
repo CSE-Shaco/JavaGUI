@@ -3,19 +3,19 @@ package shared.dto;
 import shared.domain.FileInfo;
 import shared.domain.User;
 
-import java.io.Serial;
 import java.io.Serializable;
 
+/**
+ * Represents a request sent from client to server.
+ * Can contain a message, file, or control action.
+ */
 public class ClientRequest implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    private final String action;   // 예: "sendMessage", "join", "quit"
-    private final String content;  // 메시지 내용
-    private final String roomId;   // 방 ID
-    private final User user;       // 사용자 정보
-    private final FileInfo fileInfo;
+    private final String action;     // e.g., "sendMessage", "join", "quit"
+    private final String content;    // message content (optional)
+    private final String roomId;     // target room ID
+    private final User user;         // sender user
+    private final FileInfo fileInfo; // file data (optional)
 
     public ClientRequest(String action, String content, String roomId, User user, FileInfo fileInfo) {
         this.action = action;
@@ -47,6 +47,11 @@ public class ClientRequest implements Serializable {
 
     @Override
     public String toString() {
-        return "ClientRequest{" + "action='" + action + '\'' + ", content='" + content + '\'' + ", roomId='" + roomId + '\'' + ", user=" + user + '}';
+        return "ClientRequest{" +
+                "action='" + action + '\'' +
+                ", content='" + content + '\'' +
+                ", roomId='" + roomId + '\'' +
+                ", user=" + user +
+                '}';
     }
 }
