@@ -100,7 +100,7 @@ public class ClientHandler extends Thread {
                 room.broadcastMessage(response);
             }
             case "quit" -> {
-                String msg = user.getUsername() + " has left the room.";
+                String msg = (room.isAnonymous() ? "unknown" : user.getUsername()) + " has left the room.";
                 ServerResponse response = new MessageResponse("", "", roomId, msg, true);
                 room.broadcastMessage(response);
                 chatService.removeSession(session);
