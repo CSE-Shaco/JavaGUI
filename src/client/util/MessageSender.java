@@ -41,17 +41,4 @@ public class MessageSender {
         out.writeObject(request);
         out.flush();
     }
-
-    /**
-     * Sends a quit signal to leave the chat room.
-     *
-     * @param user   The user who quits
-     * @param roomId Room to leave
-     * @throws IOException if sending fails
-     */
-    public void sendQuit(User user, String roomId) throws IOException {
-        ClientRequest request = new ClientRequest("quit", "", roomId, user, null);
-        out.writeObject(request);
-        out.flush();
-    }
 }

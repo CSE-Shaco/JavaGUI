@@ -189,11 +189,6 @@ public class ChatWindow extends JFrame {
     private void handleExit() {
         int choice = JOptionPane.showConfirmDialog(this, "Do you want to leave this chat room?", "Exit", JOptionPane.YES_NO_OPTION);
         if (choice == JOptionPane.YES_OPTION) {
-            try {
-                client.getSender().sendQuit(user, roomId);
-            } catch (Exception ex) {
-                System.err.println("Failed to send quit message: " + ex.getMessage());
-            }
             client.disconnect();
 
             SwingUtilities.invokeLater(() -> new RoomSelectionWindow(user));
